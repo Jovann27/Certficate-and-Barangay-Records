@@ -1,0 +1,158 @@
+const { getPool } = require('./database');
+
+const createTables = async () => {
+  const pool = getPool();
+
+  try {
+    // Users table for authentication
+    const usersTable = `
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role ENUM('admin', 'staff') DEFAULT 'staff',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Personal Details table
+    const personalDetailsTable = `
+      CREATE TABLE IF NOT EXISTS personal_details (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        middle_name VARCHAR(255),
+        suffix VARCHAR(50),
+        age INT NOT NULL,
+        gender ENUM('Male', 'Female', 'Other') NOT NULL,
+        religion VARCHAR(100) NOT NULL,
+        civil_status ENUM('Single', 'Married', 'Widowed', 'Divorced', 'Separated') NOT NULL,
+        address VARCHAR(500) NOT NULL,
+        occupation VARCHAR(100),
+        date_of_birth DATE NOT NULL,
+        place_of_birth VARCHAR(255) NOT NULL,
+        employment_status ENUM('Employed', 'Unemployed', 'Self-Employed', 'Student', 'Retired') NOT NULL,
+        contact_no VARCHAR(20) NOT NULL,
+        province VARCHAR(100) NOT NULL,
+        educational_attainment ENUM('Elementary', 'High School', 'College', 'Vocational', 'Postgraduate', 'None') NOT NULL,
+        certificate_type ENUM('Indigency', 'Residency', 'Clearance', 'Business Permit') NOT NULL,
+        purpose VARCHAR(100) NOT NULL,
+        pwd BOOLEAN NOT NULL DEFAULT FALSE,
+        tenant BOOLEAN NOT NULL DEFAULT FALSE,
+        house_owner_name VARCHAR(255),
+        living_with_relative BOOLEAN NOT NULL DEFAULT FALSE,
+        relative_name VARCHAR(255),
+        relative_relationship VARCHAR(100),
+        residency_length ENUM('Less than 1 year', '1-5 years', '6-10 years', 'More than 10 years') NOT NULL,
+        registered_voter BOOLEAN NOT NULL DEFAULT FALSE,
+        house_owner BOOLEAN NOT NULL DEFAULT FALSE,
+        kasambahay BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_name (first_name, last_name),
+        INDEX idx_certificate_type (certificate_type),
+        INDEX idx_created_at (created_at)
+      )
+    `;
+
+    // Kasambahay Registration table
+    const kasambahayTable = `
+      CREATE TABLE IF NOT EXISTS kasambahay_registration (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        employer_name VARCHAR(255) NOT NULL,
+        employer_address VARCHAR(500) NOT NULL,
+        monthly_salary VARCHAR(100) NOT NULL,
+        nature_of_work VARCHAR(100) NOT NULL,
+        employment_arrangement ENUM('Full-time', 'Part-time', 'Contract') NOT NULL,
+        sss_no VARCHAR(20),
+        pagibig_no VARCHAR(20),
+        philhealth_no VARCHAR(20),
+        spouse_name VARCHAR(255),
+        father_name VARCHAR(255),
+        father_address VARCHAR(500),
+        mother_name VARCHAR(255),
+        mother_address VARCHAR(500),
+        emergency_contact_person VARCHAR(255) NOT NULL,
+        emergency_contact_no VARCHAR(20) NOT NULL,
+        documents TEXT,
+        agree_to_terms BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_employer_name (employer_name),
+        INDEX idx_created_at (created_at)
+      )
+    `;
+
+    // Barangay Inhabitants Record table
+    const rbiTable = `
+      CREATE TABLE IF NOT EXISTS barangay_inhabitants (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        region VARCHAR(100) NOT NULL,
+        province VARCHAR(100) NOT NULL,
+        city_municipality VARCHAR(100) NOT NULL,
+        barangay VARCHAR(100) NOT NULL,
+        household_no VARCHAR(50) NOT NULL,
+        address VARCHAR(500) NOT NULL,
+        last_name VARCHAR(255) NOT NULL,
+        first_name VARCHAR(255) NOT NULL,
+        middle_name VARCHAR(255),
+        qualifier VARCHAR(50),
+        date_of_birth DATE NOT NULL,
+        place_of_birth VARCHAR(255) NOT NULL,
+        gender ENUM('Male', 'Female', 'Other') NOT NULL,
+        civil_status ENUM('Single', 'Married', 'Widowed', 'Divorced', 'Separated') NOT NULL,
+        citizenship VARCHAR(100) NOT NULL,
+        occupation VARCHAR(100),
+        housing_status ENUM('Owned', 'Rented', 'Mortgaged', 'Living with relatives') NOT NULL,
+        years_residing INT NOT NULL,
+        registered_voter ENUM('Yes', 'No') NOT NULL,
+        health_problem VARCHAR(255),
+        septic_tank ENUM('Yes', 'No', 'Not Applicable') NOT NULL,
+        relationship_to_head VARCHAR(100) NOT NULL,
+        date_accomplished DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_household_no (household_no),
+        INDEX idx_name (first_name, last_name),
+        INDEX idx_created_at (created_at)
+      )
+    `;
+
+    // Execute table creations
+    await pool.execute(usersTable);
+    console.log('✓ Users table ready');
+
+    await pool.execute(personalDetailsTable);
+    console.log('✓ Personal details table ready');
+
+    await pool.execute(kasambahayTable);
+    console.log('✓ Kasambahay registration table ready');
+
+    await pool.execute(rbiTable);
+    console.log('✓ Barangay inhabitants table ready');
+
+    // Create default admin user if not exists
+    const [existingAdmin] = await pool.execute(
+      'SELECT id FROM users WHERE username = ?',
+      ['admin']
+    );
+
+    if (existingAdmin.length === 0) {
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash('admin123', 12);
+
+      await pool.execute(
+        'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+        ['admin', 'admin@barangay.local', hashedPassword, 'admin']
+      );
+      console.log('✓ Default admin user created (username: admin, password: admin123)');
+    }
+
+    console.log('Database initialization completed successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
+};
+
+module.exports = { createTables };
