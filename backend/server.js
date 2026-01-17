@@ -158,9 +158,6 @@ const startServer = async () => {
     app.listen(port, () => {
       logger.info(`Server running on http://localhost:${port}`);
       console.log(`🚀 Server running on http://localhost:${port}`);
-      console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🔒 Authentication enabled`);
-      console.log(`📝 Default admin credentials: admin / admin123`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

@@ -52,6 +52,21 @@ class PersonalDetails extends BaseModel {
     const [rows] = await this.pool.execute(sql);
     return rows[0];
   }
+
+  async getByResidentId(residentId) {
+    const sql = `
+      SELECT
+        id,
+        certificate_type,
+        purpose,
+        created_at as date_issued
+      FROM personal_details
+      WHERE resident_id = ?
+      ORDER BY created_at DESC
+    `;
+    const [rows] = await this.pool.execute(sql, [residentId]);
+    return rows;
+  }
 }
 
 module.exports = new PersonalDetails();

@@ -22,6 +22,7 @@ const createTables = async () => {
     const personalDetailsTable = `
       CREATE TABLE IF NOT EXISTS personal_details (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        resident_id INT,
         first_name VARCHAR(255) NOT NULL,
         last_name VARCHAR(255) NOT NULL,
         middle_name VARCHAR(255),
@@ -51,6 +52,8 @@ const createTables = async () => {
         house_owner BOOLEAN NOT NULL DEFAULT FALSE,
         kasambahay BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (resident_id) REFERENCES barangay_inhabitants(id) ON DELETE SET NULL,
+        INDEX idx_resident_id (resident_id),
         INDEX idx_name (first_name, last_name),
         INDEX idx_certificate_type (certificate_type),
         INDEX idx_created_at (created_at)
@@ -61,6 +64,7 @@ const createTables = async () => {
     const kasambahayTable = `
       CREATE TABLE IF NOT EXISTS kasambahay_registration (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        resident_id INT,
         employer_name VARCHAR(255) NOT NULL,
         employer_address VARCHAR(500) NOT NULL,
         monthly_salary VARCHAR(100) NOT NULL,
@@ -79,6 +83,8 @@ const createTables = async () => {
         documents TEXT,
         agree_to_terms BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (resident_id) REFERENCES barangay_inhabitants(id) ON DELETE SET NULL,
+        INDEX idx_resident_id (resident_id),
         INDEX idx_employer_name (employer_name),
         INDEX idx_created_at (created_at)
       )
@@ -118,6 +124,45 @@ const createTables = async () => {
       )
     `;
 
+    // Business Permits table
+    const businessPermitsTable = `
+      CREATE TABLE IF NOT EXISTS business_permits (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        resident_id INT,
+        application_type ENUM('NEW', 'OLD') DEFAULT 'NEW',
+        application_date DATE NOT NULL,
+        business_name VARCHAR(255) NOT NULL,
+        nature_of_business VARCHAR(255) NOT NULL,
+        proprietor_name VARCHAR(255) NOT NULL,
+        business_address VARCHAR(500) NOT NULL,
+        brn_number VARCHAR(100) NOT NULL,
+        dti_number VARCHAR(100) NOT NULL,
+        mayors_permit_number VARCHAR(100) NOT NULL,
+        date_issued DATE NOT NULL,
+        email_address VARCHAR(100) NOT NULL,
+        contact_number VARCHAR(20) NOT NULL,
+        representative_name VARCHAR(255) NOT NULL,
+        position VARCHAR(100) NOT NULL,
+        privacy_consent BOOLEAN DEFAULT FALSE,
+        control_number VARCHAR(20),
+        amount_paid DECIMAL(10,2) DEFAULT 500.00,
+        date_paid DATE,
+        or_number VARCHAR(50),
+        received_by VARCHAR(255),
+        date_received DATE,
+        valid_until DATE,
+        applicant_signature VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (resident_id) REFERENCES barangay_inhabitants(id) ON DELETE SET NULL,
+        INDEX idx_resident_id (resident_id),
+        INDEX idx_proprietor_name (proprietor_name),
+        INDEX idx_business_name (business_name),
+        INDEX idx_application_date (application_date),
+        INDEX idx_created_at (created_at)
+      )
+    `;
+
     // Execute table creations
     await pool.execute(usersTable);
     console.log('✓ Users table ready');
@@ -130,6 +175,9 @@ const createTables = async () => {
 
     await pool.execute(rbiTable);
     console.log('✓ Barangay inhabitants table ready');
+
+    await pool.execute(businessPermitsTable);
+    console.log('✓ Business permits table ready');
 
     // Create default admin user if not exists
     const [existingAdmin] = await pool.execute(

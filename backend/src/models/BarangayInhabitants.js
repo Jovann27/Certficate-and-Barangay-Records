@@ -61,6 +61,32 @@ class BarangayInhabitants extends BaseModel {
     );
     return rows;
   }
+
+  async getWithCertificateHistory(residentId) {
+    const PersonalDetails = require('./PersonalDetails');
+    const Kasambahay = require('./Kasambahay');
+    const BusinessPermit = require('./BusinessPermit');
+
+    // Get resident details
+    const resident = await this.findById(residentId);
+    if (!resident) return null;
+
+    // Get certificate history
+    const personalCertificates = await PersonalDetails.getByResidentId(residentId);
+    const kasambahayCertificates = await Kasambahay.getByResidentId(residentId);
+    const businessCertificates = await BusinessPermit.getByResidentId(residentId);
+
+    const certificateHistory = [
+      ...personalCertificates.map(cert => ({ ...cert, source: 'personal_details' })),
+      ...kasambahayCertificates.map(cert => ({ ...cert, source: 'kasambahay' })),
+      ...businessCertificates.map(cert => ({ ...cert, source: 'business_permit' }))
+    ].sort((a, b) => new Date(b.date_issued) - new Date(a.date_issued));
+
+    return {
+      resident,
+      certificateHistory
+    };
+  }
 }
 
 module.exports = new BarangayInhabitants();

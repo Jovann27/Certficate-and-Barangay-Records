@@ -40,7 +40,7 @@ class BaseModel {
   async findByConditions(conditions, options = {}) {
     const { limit, offset, orderBy, orderDirection = 'DESC' } = options;
     const keys = Object.keys(conditions);
-    const placeholders = keys.map(() => '?').join(' AND ');
+    const placeholders = keys.map(key => `${key} = ?`).join(' AND ');
     const params = Object.values(conditions);
 
     let sql = `SELECT * FROM ${this.tableName} WHERE ${placeholders}`;
@@ -59,7 +59,16 @@ class BaseModel {
       params.push(offset);
     }
 
+    // Debug logging
+    console.log('findByConditions Debug:');
+    console.log('Table:', this.tableName);
+    console.log('Conditions:', conditions);
+    console.log('Keys:', keys);
+    console.log('Params:', params);
+    console.log('SQL:', sql);
+
     const [rows] = await this.pool.execute(sql, params);
+    console.log('Rows found:', rows.length);
     return rows;
   }
 
@@ -100,7 +109,7 @@ class BaseModel {
     const params = [];
 
     if (keys.length > 0) {
-      const placeholders = keys.map(() => '?').join(' AND ');
+      const placeholders = keys.map(key => `${key} = ?`).join(' AND ');
       sql += ` WHERE ${placeholders}`;
       params.push(...Object.values(conditions));
     }

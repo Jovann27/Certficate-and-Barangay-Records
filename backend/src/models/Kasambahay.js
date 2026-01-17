@@ -52,6 +52,21 @@ class Kasambahay extends BaseModel {
     const [rows] = await this.pool.execute(sql);
     return rows[0];
   }
+
+  async getByResidentId(residentId) {
+    const sql = `
+      SELECT
+        id,
+        'Kasambahay Registration' as type,
+        nature_of_work as category,
+        created_at as date_issued
+      FROM kasambahay_registration
+      WHERE resident_id = ?
+      ORDER BY created_at DESC
+    `;
+    const [rows] = await this.pool.execute(sql, [residentId]);
+    return rows;
+  }
 }
 
 module.exports = new Kasambahay();

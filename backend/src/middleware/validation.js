@@ -1,4 +1,4 @@
-const { personalDetailsSchema, kasambahaySchema, barangayInhabitantsSchema, loginSchema, registerSchema } = require('../validation/schemas');
+const { personalDetailsSchema, kasambahaySchema, barangayInhabitantsSchema, businessPermitSchema, loginSchema, registerSchema } = require('../validation/schemas');
 
 const validate = (schema) => {
   return (req, res, next) => {
@@ -26,6 +26,7 @@ module.exports = {
   validatePersonalDetails: validate(personalDetailsSchema),
   validateKasambahay: validate(kasambahaySchema),
   validateBarangayInhabitants: validate(barangayInhabitantsSchema),
+  validateBusinessPermit: validate(businessPermitSchema),
   validateLogin: validate(loginSchema),
   validateRegister: validate(registerSchema)
 };

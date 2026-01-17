@@ -2,6 +2,7 @@ const Joi = require('joi');
 
 // Personal Details Validation Schema
 const personalDetailsSchema = Joi.object({
+  resident_id: Joi.number().integer().min(1).allow(null),
   first_name: Joi.string().min(1).max(255).required(),
   last_name: Joi.string().min(1).max(255).required(),
   middle_name: Joi.string().max(255).allow(''),
@@ -34,6 +35,7 @@ const personalDetailsSchema = Joi.object({
 
 // Kasambahay Registration Validation Schema
 const kasambahaySchema = Joi.object({
+  resident_id: Joi.number().integer().min(1).allow(null),
   employer_name: Joi.string().min(1).max(255).required(),
   employer_address: Joi.string().max(500).required(),
   monthly_salary: Joi.string().max(100).required(),
@@ -80,6 +82,21 @@ const barangayInhabitantsSchema = Joi.object({
   date_accomplished: Joi.date().required()
 });
 
+// Business Permit Validation Schema
+const businessPermitSchema = Joi.object({
+  proprietor_name: Joi.string().min(1).max(255).required(),
+  business_name: Joi.string().min(1).max(255).required(),
+  nature_of_business: Joi.string().max(255).required(),
+  business_address: Joi.string().max(500).required(),
+  amount_paid: Joi.number().min(0).precision(2).required(),
+  date_paid: Joi.date().required(),
+  or_number: Joi.string().max(50).required(),
+  received_by: Joi.string().max(255).required(),
+  applicant_signature: Joi.string().max(255).allow(''),
+  date_received: Joi.date().required(),
+  valid_until: Joi.date().required()
+});
+
 // Auth Validation Schemas
 const loginSchema = Joi.object({
   username: Joi.string().min(3).max(50).required(),
@@ -97,6 +114,7 @@ module.exports = {
   personalDetailsSchema,
   kasambahaySchema,
   barangayInhabitantsSchema,
+  businessPermitSchema,
   loginSchema,
   registerSchema
 };
