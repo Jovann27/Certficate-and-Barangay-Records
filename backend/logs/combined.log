@@ -172,3 +172,4 @@
 {"ip":"::1","level":"info","message":"GET /api/stats","service":"barangay-management-system","timestamp":"2026-01-17T19:10:50.971Z","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"}
 {"ip":"::1","level":"info","message":"GET /api/stats","service":"barangay-management-system","timestamp":"2026-01-17T19:10:50.979Z","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"}
 {"ip":"::1","level":"info","message":"GET /api/records","service":"barangay-management-system","timestamp":"2026-01-17T19:10:50.988Z","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"}
+{"level":"info","message":"Server running on http://localhost:3001","service":"barangay-management-system","timestamp":"2026-01-17T19:16:48.973Z"}
