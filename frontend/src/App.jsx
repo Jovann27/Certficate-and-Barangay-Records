@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import LoginSystem from './screens/LoginSystem';
-import AdminDashboard from './screens/AdminDashboard';
-import Dashboard from './screens/Dashboard';
-import PersonalDetailsForm from './screens/PersonalDetailsForm';
-import BusinessPermitForm from './screens/BusinessPermitForm';
-import RecordOfBarangayInhabitantsForm from './screens/RecordOfBarangayInhabitantsForm';
+import AdminDashboard from './screens/Admin/AdminDashboard';
+import Dashboard from './screens/Staff/Dashboard';
+import ResidentDetailsForm from './screens/Staff/ResidentDetailsForm';
+import AdminResidentDetailsForm from './screens/Admin/AdminResidentDetailsForm';
+import BusinessPermitForm from './screens/Staff/BusinessPermitForm';
+import RecordOfBarangayInhabitantsForm from './screens/Staff/RecordOfBarangayInhabitantsForm';
+import AdminRecordOfBarangayInhabitantsForm from './screens/Admin/AdminRecordOfBarangayInhabitantsForm';
+import BarangayInhabitantsList from './screens/Admin/BarangayInhabitantsList';
+import ManageUsers from './screens/Admin/ManageUsers';
+import Documents from './screens/Admin/Documents';
+import Residency from './screens/certificates/Residency';
+import BusinessPermitCertificate from './screens/certificates/BusinessPermitCertificate';
+import CertificateOfIndigency from './screens/certificates/CertificateOfIndigency';
+import CertificateOfEmployment from './screens/certificates/CertificateOfEmployment';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
+  const [viewData, setViewData] = useState(null);
 
   // Check for existing authentication on app load
   useEffect(() => {
@@ -46,8 +56,9 @@ function App() {
     setCurrentView('dashboard');
   };
 
-  const handleNavigate = (view) => {
+  const handleNavigate = (view, data = null) => {
     setCurrentView(view);
+    setViewData(data);
   };
 
   // Show login if not authenticated
@@ -55,21 +66,40 @@ function App() {
     return <LoginSystem onLogin={handleLogin} />;
   }
 
-  // Show admin dashboard for admin users
-  if (user?.role === 'admin') {
-    return <AdminDashboard onLogout={handleLogout} />;
-  }
-
-  // Render current view for authenticated users
+  // Render current view for authenticated users (including admins)
   const renderView = () => {
     switch (currentView) {
       case 'personal':
-        return <PersonalDetailsForm onBack={() => setCurrentView('dashboard')} onLogout={handleLogout} />;
+        return <ResidentDetailsForm onBack={() => setCurrentView('dashboard')} onLogout={handleLogout} />;
+      case 'admin-resident-details':
+        return <AdminResidentDetailsForm onBack={() => setCurrentView('admin-dashboard')} onLogout={handleLogout} />;
       case 'business':
         return <BusinessPermitForm onBack={() => setCurrentView('dashboard')} onLogout={handleLogout} />;
       case 'rbi':
+        if (user?.role === 'admin') {
+          return <AdminRecordOfBarangayInhabitantsForm onBack={() => setCurrentView('admin-dashboard')} onLogout={handleLogout} />;
+        }
         return <RecordOfBarangayInhabitantsForm onBack={() => setCurrentView('dashboard')} onLogout={handleLogout} />;
+      case 'barangay-inhabitants-list':
+        return <BarangayInhabitantsList onNavigate={handleNavigate} onLogout={handleLogout} />;
+      case 'admin-dashboard':
+        return <AdminDashboard onLogout={handleLogout} onNavigate={handleNavigate} />;
+      case 'manage-users':
+        return <ManageUsers onBack={() => setCurrentView('admin-dashboard')} onLogout={handleLogout} />;
+      case 'documents':
+        return <Documents onNavigate={handleNavigate} onLogout={handleLogout} residentId={viewData?.residentId} />;
+      case 'certificate-residency':
+        return <Residency onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
+      case 'certificate-business-permit':
+        return <BusinessPermitCertificate onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
+      case 'certificate-of-indigency':
+        return <CertificateOfIndigency onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
+      case 'certificate-of-employment':
+        return <CertificateOfEmployment onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
       default:
+        if (user?.role === 'admin') {
+          return <AdminDashboard onLogout={handleLogout} onNavigate={handleNavigate} />;
+        }
         return <Dashboard onNavigate={handleNavigate} onLogout={handleLogout} />;
     }
   };

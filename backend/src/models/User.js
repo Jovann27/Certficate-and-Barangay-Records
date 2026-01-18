@@ -54,6 +54,23 @@ class User extends BaseModel {
     });
   }
 
+  async updateUser(id, userData) {
+    const { password, ...otherData } = userData;
+    const data = {
+      ...otherData,
+      updated_at: new Date()
+    };
+
+    // If password is provided and not empty, hash and update it
+    if (password && password.trim() !== '') {
+      const saltRounds = 12;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      data.password = hashedPassword;
+    }
+
+    return await this.update(id, data);
+  }
+
   async getActiveUsers() {
     const [rows] = await this.pool.execute(
       'SELECT id, username, email, role, created_at FROM users WHERE is_active = 1 ORDER BY created_at DESC'

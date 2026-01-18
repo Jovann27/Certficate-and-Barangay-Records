@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
+import CertificateOfIndigency from '../certificates/CertificateOfIndigency';
+import Residency from '../certificates/Residency';
+import Residency2 from '../certificates/Residency2';
+import CertificateOfEmployment from '../certificates/CertificateOfEmployment';
 
-const PersonalDetailsForm = ({ onBack, onLogout }) => {
+const AdminResidentDetailsForm = ({ onBack, onLogout }) => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [selectedCertificate, setSelectedCertificate] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -16,22 +21,73 @@ const PersonalDetailsForm = ({ onBack, onLogout }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const response = await fetch('http://localhost:3001/api/personal-details', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      const result = await response.json();
-      setMessage(result.message || 'Submitted successfully');
-    } catch (error) {
-      setMessage('Error submitting form');
-      console.error('Error:', error);
+
+    const certificateType = formData.certificate_type;
+
+    // Navigate to the appropriate certificate based on selection
+    if (certificateType === 'indigency') {
+      setSelectedCertificate('indigency');
+      setLoading(false);
+      return;
+    } else if (certificateType === 'residency') {
+      setSelectedCertificate('residency');
+      setLoading(false);
+      return;
+    } else if (certificateType === 'residency2') {
+      setSelectedCertificate('residency2');
+      setLoading(false);
+      return;
+    } else if (certificateType === 'employment') {
+      setSelectedCertificate('employment');
+      setLoading(false);
+      return;
     }
+
+    // If no certificate type selected, show error
+    setMessage('Please select a certificate type');
     setLoading(false);
   };
+
+  // Render the selected certificate with the form data
+  if (selectedCertificate === 'indigency') {
+    return (
+      <CertificateOfIndigency
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
+        onLogout={onLogout}
+      />
+    );
+  }
+
+  if (selectedCertificate === 'residency') {
+    return (
+      <Residency
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
+        onLogout={onLogout}
+      />
+    );
+  }
+
+  if (selectedCertificate === 'residency2') {
+    return (
+      <Residency2
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
+        onLogout={onLogout}
+      />
+    );
+  }
+
+  if (selectedCertificate === 'employment') {
+    return (
+      <CertificateOfEmployment
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
+        onLogout={onLogout}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -40,7 +96,7 @@ const PersonalDetailsForm = ({ onBack, onLogout }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-3">
-              <div className="bg-green-600 text-white p-2 rounded-lg">
+              <div className="bg-blue-600 text-white p-2 rounded-lg">
                 <span className="text-xl font-bold">🏛️</span>
               </div>
               <div>
@@ -50,7 +106,7 @@ const PersonalDetailsForm = ({ onBack, onLogout }) => {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">Staff User</p>
+                <p className="text-sm font-medium text-gray-900">Admin User</p>
                 <p className="text-xs text-gray-600">{new Date().toLocaleDateString()}</p>
               </div>
               <button onClick={onLogout} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors">
@@ -214,6 +270,8 @@ const PersonalDetailsForm = ({ onBack, onLogout }) => {
               <option value="">Select Type</option>
               <option value="indigency">Certificate of Indigency</option>
               <option value="residency">Certificate of Residency</option>
+              <option value="residency2">Certificate of Residency II</option>
+              <option value="employment">Certificate of Employment</option>
             </select>
           </div>
           <div>
@@ -549,4 +607,4 @@ const PersonalDetailsForm = ({ onBack, onLogout }) => {
   );
 };
 
-export default PersonalDetailsForm;
+export default AdminResidentDetailsForm;

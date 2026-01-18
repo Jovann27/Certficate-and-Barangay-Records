@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import BusinessPermitCertificate from './certificates/BusinessPermitCertificate';
+import BusinessPermitCertificate from '../certificates/BusinessPermitCertificate';
 
 const BusinessPermitForm = ({ onBack, onLogout }) => {
   const [formData, setFormData] = useState({

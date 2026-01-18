@@ -63,7 +63,7 @@ class BarangayInhabitants extends BaseModel {
   }
 
   async getWithCertificateHistory(residentId) {
-    const PersonalDetails = require('./PersonalDetails');
+    const ResidentDetails = require('./ResidentDetails');
     const Kasambahay = require('./Kasambahay');
     const BusinessPermit = require('./BusinessPermit');
 
@@ -72,7 +72,7 @@ class BarangayInhabitants extends BaseModel {
     if (!resident) return null;
 
     // Get certificate history
-    const personalCertificates = await PersonalDetails.getByResidentId(residentId);
+    const personalCertificates = await ResidentDetails.getByResidentId(residentId);
     const kasambahayCertificates = await Kasambahay.getByResidentId(residentId);
     const businessCertificates = await BusinessPermit.getByResidentId(residentId);
 

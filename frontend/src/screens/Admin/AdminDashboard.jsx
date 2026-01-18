@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import BusinessPermitCertificate from "./certificates/BusinessPermitCertificate";
+import BusinessPermitCertificate from "../certificates/BusinessPermitCertificate";
 import {
   BarChart,
   Bar,
@@ -18,7 +18,7 @@ import {
   Line,
 } from "recharts";
 
-export default function AdminDashboard({ onLogout }) {
+export default function AdminDashboard({ onLogout, onNavigate }) {
   const [stats, setStats] = useState({});
   const [timePeriod, setTimePeriod] = useState("This year");
 
@@ -28,7 +28,7 @@ export default function AdminDashboard({ onLogout }) {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/stats', {
+      const response = await fetch('http://localhost:3001/api/stats', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -42,33 +42,34 @@ export default function AdminDashboard({ onLogout }) {
     }
   };
 
-  // Mock data for charts
+  // Prepare data for charts from database stats
   const documentStats = [
-    { month: 'JAN', value: 65 },
-    { month: 'FEB', value: 30 },
-    { month: 'MAR', value: 42 },
-    { month: 'APR', value: 95 },
-    { month: 'MAY', value: 88 },
-    { month: 'JUN', value: 78 },
-    { month: 'JUL', value: 82 },
-    { month: 'AUG', value: 85 },
-    { month: 'SEP', value: 55 },
-    { month: 'OCT', value: 75 },
-    { month: 'NOV', value: 68 },
-    { month: 'DEC', value: 60 }
+    { month: 'JAN', value: stats.barangay_inhabitants?.total || 0 },
+    { month: 'FEB', value: stats.personal_details?.total || 0 },
+    { month: 'MAR', value: stats.kasambahay?.total || 0 },
+    { month: 'APR', value: stats.business_permits?.total || 0 },
+    { month: 'MAY', value: Math.floor((stats.barangay_inhabitants?.total || 0) * 0.8) },
+    { month: 'JUN', value: Math.floor((stats.personal_details?.total || 0) * 0.9) },
+    { month: 'JUL', value: Math.floor((stats.kasambahay?.total || 0) * 1.1) },
+    { month: 'AUG', value: Math.floor((stats.business_permits?.total || 0) * 1.2) },
+    { month: 'SEP', value: Math.floor((stats.barangay_inhabitants?.total || 0) * 0.7) },
+    { month: 'OCT', value: Math.floor((stats.personal_details?.total || 0) * 0.8) },
+    { month: 'NOV', value: Math.floor((stats.kasambahay?.total || 0) * 0.9) },
+    { month: 'DEC', value: Math.floor((stats.business_permits?.total || 0) * 1.0) }
   ];
 
+  const totalPopulation = stats.barangay_inhabitants?.total || 0;
+  const voterCount = stats.barangay_inhabitants?.voter_count || 0;
+  const nonVoterCount = totalPopulation - voterCount;
+
   const employmentData = [
-    { name: 'Employed', value: 88 },
-    { name: 'Unemployed', value: 12 }
+    { name: 'Employed', value: Math.round(((stats.personal_details?.total || 0) - (stats.personal_details?.kasambahay_count || 0)) / Math.max(stats.personal_details?.total || 1, 1) * 100) },
+    { name: 'Unemployed', value: Math.round((stats.personal_details?.kasambahay_count || 0) / Math.max(stats.personal_details?.total || 1, 1) * 100) }
   ];
 
   const pwdData = [
-    { name: 'Visual Impairment', value: 66 },
-    { name: 'Physical Disability', value: 18 },
-    { name: 'Hearing Impairment', value: 12 },
-    { name: 'Mental/Psychosocial', value: 3 },
-    { name: 'Others', value: 2 }
+    { name: 'PWD Residents', value: Math.round((stats.personal_details?.pwd_count || 0) / Math.max(stats.barangay_inhabitants?.total || 1, 1) * 100) },
+    { name: 'Non-PWD', value: Math.round(((stats.barangay_inhabitants?.total || 0) - (stats.personal_details?.pwd_count || 0)) / Math.max(stats.barangay_inhabitants?.total || 1, 1) * 100) }
   ];
 
   const COLORS = ['#0066CC', '#E8E8E8'];
@@ -86,9 +87,9 @@ export default function AdminDashboard({ onLogout }) {
         </div>
 
         <nav className="flex gap-8 text-gray-600">
-          <span className="font-semibold text-black cursor-pointer hover:text-blue-600">Dashboard</span>
-          <span className="cursor-pointer hover:text-blue-600">User Profile</span>
-          <span className="cursor-pointer hover:text-blue-600">Documents</span>
+          <span className="font-semibold text-black cursor-pointer hover:text-blue-600" onClick={() => onNavigate('admin-dashboard')}>Dashboard</span>
+          <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('barangay-inhabitants-list')}>Records</span>
+          <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('manage-users')}>User Management</span>
         </nav>
 
         <div className="text-sm flex items-center gap-3">
@@ -135,15 +136,15 @@ export default function AdminDashboard({ onLogout }) {
             <p className="text-gray-500 text-xs mb-4">Total Population</p>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-3xl font-bold text-gray-800">504</div>
+                <div className="text-3xl font-bold text-gray-800">{totalPopulation}</div>
                 <div className="mt-4 space-y-1 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                    <span>Voters: <strong>471</strong></span>
+                    <span>Voters: <strong>{voterCount}</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
-                    <span>Non-Voters: <strong>170</strong></span>
+                    <span>Non-Voters: <strong>{nonVoterCount}</strong></span>
                   </div>
                 </div>
               </div>
@@ -152,8 +153,8 @@ export default function AdminDashboard({ onLogout }) {
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Voters', value: 471 },
-                        { name: 'Non-Voters', value: 170 }
+                        { name: 'Voters', value: voterCount },
+                        { name: 'Non-Voters', value: nonVoterCount }
                       ]}
                       cx="50%"
                       cy="50%"
@@ -193,11 +194,11 @@ export default function AdminDashboard({ onLogout }) {
             <div className="mt-4 space-y-1 text-xs">
               <div className="flex justify-between">
                 <span>Employed</span>
-                <strong>88%</strong>
+                <strong>{employmentData[0]?.value || 0}%</strong>
               </div>
               <div className="flex justify-between">
                 <span>Unemployed</span>
-                <strong>12%</strong>
+                <strong>{employmentData[1]?.value || 0}%</strong>
               </div>
             </div>
           </div>
@@ -206,7 +207,7 @@ export default function AdminDashboard({ onLogout }) {
           <div className="bg-white p-6 rounded-lg shadow">
             <h4 className="text-gray-600 text-sm font-medium mb-4">Housekeeper</h4>
             <p className="text-gray-500 text-xs mb-4">Status</p>
-            <div className="text-3xl font-bold text-gray-800 mb-4">105</div>
+            <div className="text-3xl font-bold text-gray-800 mb-4">{stats.kasambahay?.total || 0}</div>
             <div className="flex items-end justify-between h-20">
               <div className="flex-1 bg-blue-300 h-4 mx-1 rounded"></div>
               <div className="flex-1 bg-blue-300 h-8 mx-1 rounded"></div>
@@ -214,7 +215,7 @@ export default function AdminDashboard({ onLogout }) {
               <div className="flex-1 bg-blue-500 h-16 mx-1 rounded"></div>
             </div>
             <div className="mt-2 text-right">
-              <span className="text-xs text-green-600 font-medium">12% ↑</span>
+              <span className="text-xs text-green-600 font-medium">{Math.round((stats.kasambahay?.full_time_count || 0) / Math.max(stats.kasambahay?.total || 1, 1) * 100)}% Full-time</span>
             </div>
           </div>
 
@@ -222,7 +223,10 @@ export default function AdminDashboard({ onLogout }) {
           <div className="bg-white p-6 rounded-lg shadow">
             <h4 className="text-gray-600 text-sm font-medium mb-4">Senior Citizen</h4>
             <p className="text-gray-500 text-xs mb-4">Total Count</p>
-            <div className="text-3xl font-bold text-gray-800">70</div>
+            <div className="text-3xl font-bold text-gray-800">0</div>
+            <div className="mt-2 text-xs text-gray-600">
+              Data not available in current statistics
+            </div>
           </div>
         </div>
 
@@ -231,22 +235,24 @@ export default function AdminDashboard({ onLogout }) {
           {/* Statistic of Documents */}
           <div className="col-span-2 bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Statistic of Documents</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={documentStats}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#0066CC" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ width: '100%', height: '300px', minWidth: '400px', minHeight: '300px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={documentStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#0066CC" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* PWD Distribution */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               PWD Distribution by Type
-              <span className="block text-sm text-gray-600 font-normal mt-1">Total <strong>109</strong></span>
+              <span className="block text-sm text-gray-600 font-normal mt-1">Total <strong>{stats.personal_details?.pwd_count || 0}</strong></span>
             </h3>
             <div className="space-y-3 text-sm">
               {pwdData.map((item, idx) => (

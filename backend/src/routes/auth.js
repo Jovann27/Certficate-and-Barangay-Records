@@ -150,6 +150,120 @@ router.get('/users', authenticateToken, authorizeRoles('admin'), async (req, res
   }
 });
 
+// Update user (admin only)
+router.put('/users/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, email, password, role } = req.body;
+
+    // Check if user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if username is taken by another user
+    if (username !== user.username) {
+      const existingUsername = await User.findByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username already exists'
+        });
+      }
+    }
+
+    // Check if email is taken by another user
+    if (email !== user.email) {
+      const existingEmail = await User.findByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already exists'
+        });
+      }
+    }
+
+    // Update user
+    const updated = await User.updateUser(id, {
+      username,
+      email,
+      role,
+      password: password || '' // Empty string if not provided
+    });
+
+    if (!updated) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update user'
+      });
+    }
+
+    // Get updated user data
+    const updatedUser = await User.findById(id);
+    const { password: _, ...userResponse } = updatedUser;
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: userResponse
+    });
+  } catch (error) {
+    console.error('User update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Delete/Deactivate user (admin only)
+router.delete('/users/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Prevent deleting own account
+    if (req.user.id == id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot deactivate your own account'
+      });
+    }
+
+    // Deactivate user
+    const deactivated = await User.deactivateUser(id);
+    if (!deactivated) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to deactivate user'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User deactivated successfully'
+    });
+  } catch (error) {
+    console.error('User deactivation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Change password
 router.put('/change-password', authenticateToken, async (req, res) => {
   try {

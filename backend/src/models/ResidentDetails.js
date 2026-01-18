@@ -1,8 +1,8 @@
 const BaseModel = require('./BaseModel');
 
-class PersonalDetails extends BaseModel {
+class ResidentDetails extends BaseModel {
   constructor() {
-    super('personal_details');
+    super('resident_details');
   }
 
   async getRecentRecords(limit = 50) {
@@ -14,7 +14,7 @@ class PersonalDetails extends BaseModel {
         certificate_type as type,
         purpose,
         created_at as date_issued
-      FROM personal_details
+      FROM resident_details
       ORDER BY created_at DESC
       LIMIT ?
     `;
@@ -31,7 +31,7 @@ class PersonalDetails extends BaseModel {
         certificate_type as type,
         purpose,
         created_at as date_issued
-      FROM personal_details
+      FROM resident_details
       WHERE CONCAT(first_name, ' ', last_name) LIKE ?
       ORDER BY created_at DESC
       LIMIT ?
@@ -47,7 +47,7 @@ class PersonalDetails extends BaseModel {
         COUNT(CASE WHEN pwd = 1 THEN 1 END) as pwd_count,
         COUNT(CASE WHEN registered_voter = 1 THEN 1 END) as voter_count,
         COUNT(CASE WHEN kasambahay = 1 THEN 1 END) as kasambahay_count
-      FROM personal_details
+      FROM resident_details
     `;
     const [rows] = await this.pool.execute(sql);
     return rows[0];
@@ -60,7 +60,7 @@ class PersonalDetails extends BaseModel {
         certificate_type,
         purpose,
         created_at as date_issued
-      FROM personal_details
+      FROM resident_details
       WHERE resident_id = ?
       ORDER BY created_at DESC
     `;
@@ -69,4 +69,4 @@ class PersonalDetails extends BaseModel {
   }
 }
 
-module.exports = new PersonalDetails();
+module.exports = new ResidentDetails();

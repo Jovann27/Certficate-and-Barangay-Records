@@ -20,7 +20,7 @@ const createTables = async () => {
 
     // Personal Details table
     const personalDetailsTable = `
-      CREATE TABLE IF NOT EXISTS personal_details (
+      CREATE TABLE IF NOT EXISTS resident_details (
         id INT AUTO_INCREMENT PRIMARY KEY,
         resident_id INT,
         first_name VARCHAR(255) NOT NULL,
@@ -168,7 +168,7 @@ const createTables = async () => {
     console.log('✓ Users table ready');
 
     await pool.execute(personalDetailsTable);
-    console.log('✓ Personal details table ready');
+    console.log('✓ Resident details table ready');
 
     await pool.execute(kasambahayTable);
     console.log('✓ Kasambahay registration table ready');

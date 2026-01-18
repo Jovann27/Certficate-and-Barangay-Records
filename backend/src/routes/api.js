@@ -1,6 +1,6 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
-const PersonalDetails = require('../models/PersonalDetails');
+const ResidentDetails = require('../models/ResidentDetails');
 const Kasambahay = require('../models/Kasambahay');
 const BarangayInhabitants = require('../models/BarangayInhabitants');
 const BusinessPermit = require('../models/BusinessPermit');
@@ -12,7 +12,7 @@ const router = express.Router();
 // Personal Details Form
 router.post('/personal-details', optionalAuth, validatePersonalDetails, async (req, res) => {
   try {
-    const result = await PersonalDetails.create(req.body);
+    const result = await ResidentDetails.create(req.body);
     res.status(201).json({
       success: true,
       message: 'Personal details submitted successfully',
@@ -506,13 +506,13 @@ router.get('/records', optionalAuth, async (req, res) => {
 
     if (search) {
       // Search functionality
-      personalDetailsRecords = await PersonalDetails.searchByName(search, Math.ceil(limit / 4));
+      personalDetailsRecords = await ResidentDetails.searchByName(search, Math.ceil(limit / 4));
       kasambahayRecords = await Kasambahay.searchByEmployer(search, Math.ceil(limit / 4));
       inhabitantsRecords = await BarangayInhabitants.searchByName(search, Math.ceil(limit / 4));
       businessPermitRecords = await BusinessPermit.searchByName(search, Math.ceil(limit / 4));
     } else {
       // Recent records
-      personalDetailsRecords = await PersonalDetails.getRecentRecords(Math.ceil(limit / 4));
+      personalDetailsRecords = await ResidentDetails.getRecentRecords(Math.ceil(limit / 4));
       kasambahayRecords = await Kasambahay.getRecentRecords(Math.ceil(limit / 4));
       inhabitantsRecords = await BarangayInhabitants.getRecentRecords(Math.ceil(limit / 4));
       businessPermitRecords = await BusinessPermit.getRecentRecords(Math.ceil(limit / 4));
@@ -576,7 +576,7 @@ router.get('/records', optionalAuth, async (req, res) => {
 router.get('/stats', optionalAuth, async (req, res) => {
   try {
     const [personalStats, kasambahayStats, inhabitantsStats, businessPermitStats] = await Promise.all([
-      PersonalDetails.getStats(),
+      ResidentDetails.getStats(),
       Kasambahay.getStats(),
       BarangayInhabitants.getStats(),
       BusinessPermit.getStats()
@@ -609,7 +609,7 @@ router.get('/records/:type/:id', authenticateToken, async (req, res) => {
 
     switch (type) {
       case 'personal':
-        record = await PersonalDetails.findById(id);
+        record = await ResidentDetails.findById(id);
         break;
       case 'kasambahay':
         record = await Kasambahay.findById(id);
@@ -689,6 +689,54 @@ router.get('/residents', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Residents search error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database error occurred'
+    });
+  }
+});
+
+// Get resident details for drag and drop
+router.get('/resident-details', authenticateToken, async (req, res) => {
+  try {
+    const { search, limit = 50 } = req.query;
+
+    let residents = [];
+
+    if (search) {
+      residents = await ResidentDetails.searchByName(search, limit);
+    } else {
+      // Get all resident details, not just recent ones for drag and drop
+      const sql = `
+        SELECT
+          id,
+          first_name,
+          middle_name,
+          last_name,
+          suffix,
+          CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, COALESCE(CONCAT(' ', suffix), '')) as full_name,
+          address,
+          gender,
+          civil_status,
+          date_of_birth,
+          place_of_birth,
+          citizenship,
+          occupation,
+          registered_voter
+        FROM resident_details
+        ORDER BY created_at DESC
+        LIMIT ?
+      `;
+      const [rows] = await ResidentDetails.pool.execute(sql, [limit]);
+      residents = rows;
+    }
+
+    res.json({
+      success: true,
+      data: residents
+    });
+  } catch (error) {
+    console.error('Resident details fetch error:', error);
     res.status(500).json({
       success: false,
       message: 'Database error occurred'
