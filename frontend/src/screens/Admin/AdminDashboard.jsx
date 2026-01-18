@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from 'react-toastify';
 import BusinessPermitCertificate from "../certificates/BusinessPermitCertificate";
 import Logo from "../../assets/kalusugan.png";
 import {
@@ -41,9 +42,13 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
       const data = await response.json();
       if (data.success) {
         setStats(data.data);
+        toast.success('Statistics loaded successfully');
+      } else {
+        toast.error('Failed to load statistics');
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      toast.error('Error fetching statistics');
     } finally {
       setLoading(false);
     }

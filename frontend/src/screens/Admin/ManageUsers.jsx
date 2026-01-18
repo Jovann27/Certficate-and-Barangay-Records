@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import Logo from '../../assets/kalusugan.png';
 
 const ManageUsers = ({ onNavigate, onLogout }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [selectedUser, setSelectedUser] = useState(null);
@@ -34,11 +34,11 @@ const ManageUsers = ({ onNavigate, onLogout }) => {
         const data = await response.json();
         setUsers(data.data);
       } else {
-        setMessage('Failed to fetch users');
+        toast.error('Failed to fetch users');
       }
     } catch (error) {
       console.error('Fetch users error:', error);
-      setMessage('Error fetching users');
+      toast.error('Error fetching users');
     } finally {
       setLoading(false);
     }
@@ -105,12 +105,12 @@ const ManageUsers = ({ onNavigate, onLogout }) => {
         });
 
         if (response.ok) {
-          setMessage('User created successfully');
+          toast.success('User created successfully');
           fetchUsers(); // Refresh list
           closeModal();
         } else {
           const error = await response.json();
-          setMessage(error.message || 'Failed to create user');
+          toast.error(error.message || 'Failed to create user');
         }
       } else {
         // Edit user
@@ -135,17 +135,17 @@ const ManageUsers = ({ onNavigate, onLogout }) => {
         });
 
         if (response.ok) {
-          setMessage('User updated successfully');
+          toast.success('User updated successfully');
           fetchUsers();
           closeModal();
         } else {
           const error = await response.json();
-          setMessage(error.message || 'Failed to update user');
+          toast.error(error.message || 'Failed to update user');
         }
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setMessage('Error submitting form');
+      toast.error('Error submitting form');
     } finally {
       setFormLoading(false);
     }
@@ -166,15 +166,15 @@ const ManageUsers = ({ onNavigate, onLogout }) => {
       });
 
       if (response.ok) {
-        setMessage('User deactivated successfully');
+        toast.success('User deactivated successfully');
         fetchUsers();
       } else {
         const error = await response.json();
-        setMessage(error.message || 'Failed to deactivate user');
+        toast.error(error.message || 'Failed to deactivate user');
       }
     } catch (error) {
       console.error('Delete error:', error);
-      setMessage('Error deactivating user');
+      toast.error('Error deactivating user');
     }
   };
 
@@ -218,11 +218,7 @@ const ManageUsers = ({ onNavigate, onLogout }) => {
               </button>
             </div>
 
-            {message && (
-              <div className={`mb-4 p-3 rounded-lg ${message.includes('success') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                {message}
-              </div>
-            )}
+
 
             {loading ? (
               <div className="text-center py-8">Loading users...</div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const Documents = ({ onNavigate, onLogout, residentId }) => {
   const [resident, setResident] = useState(null);
@@ -41,9 +42,13 @@ const Documents = ({ onNavigate, onLogout, residentId }) => {
           age,
           years_residing: age ? Math.max(1, age - 5) : '' // Rough estimate, can be adjusted
         });
+        toast.success('Resident data loaded successfully');
+      } else {
+        toast.error('Failed to load resident data');
       }
     } catch (error) {
       console.error('Error fetching resident data:', error);
+      toast.error('Error fetching resident data');
     } finally {
       setLoading(false);
     }

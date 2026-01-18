@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 
 const RecordOfBarangayInhabitantsForm = ({ onBack, onLogout }) => {
   const [formData, setFormData] = useState({
@@ -23,7 +24,6 @@ const RecordOfBarangayInhabitantsForm = ({ onBack, onLogout }) => {
     }]
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
   const handleChange = (e, memberIndex = null) => {
     const { name, value, type, checked } = e.target;
@@ -60,9 +60,13 @@ const RecordOfBarangayInhabitantsForm = ({ onBack, onLogout }) => {
         body: JSON.stringify(formData),
       });
       const result = await response.json();
-      setMessage(result.message || 'Submitted successfully');
+      if (response.ok) {
+        toast.success(result.message || 'Submitted successfully');
+      } else {
+        toast.error(result.message || 'Failed to submit');
+      }
     } catch (error) {
-      setMessage('Error submitting form');
+      toast.error('Error submitting form');
       console.error('Error:', error);
     }
     setLoading(false);
@@ -231,7 +235,9 @@ const RecordOfBarangayInhabitantsForm = ({ onBack, onLogout }) => {
           <button className="bg-green-600 text-white px-5 py-3 rounded-lg">+ Add Member</button>
           <div className="flex gap-4">
             <button className="bg-gray-200 px-5 py-3 rounded-lg">Cancel</button>
-            <button className="bg-blue-600 text-white px-5 py-3 rounded-lg">Submit</button>
+            <button onClick={handleSubmit} disabled={loading} className="bg-blue-600 text-white px-5 py-3 rounded-lg disabled:opacity-50">
+              {loading ? 'Submitting...' : 'Submit'}
+            </button>
           </div>
         </div>
         </div>

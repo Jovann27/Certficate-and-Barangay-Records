@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { Eye, EyeOff, User, Lock, ArrowRight, ArrowLeft } from 'lucide-react';
 import Logo from '../assets/kalusugan.png';
 
@@ -42,6 +43,7 @@ export default function LoginSystem({ onLogin }) {
       const data = await response.json();
 
       if (data.success) {
+        toast.success('Login successful!');
         // Store token and user data
         localStorage.setItem('token', data.data.token);
         localStorage.setItem('user', JSON.stringify(data.data.user));
@@ -49,11 +51,15 @@ export default function LoginSystem({ onLogin }) {
         // Call onLogin callback with user data
         onLogin(data.data.user, data.data.token);
       } else {
-        setError(data.message || 'Login failed');
+        const errorMsg = data.message || 'Login failed';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Network error. Please try again.');
+      const errorMsg = 'Network error. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }

@@ -1,27 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import qc from '../../assets/qc.png';
 import logo from '../../assets/kalusugan.png';
-import logo2 from '../../assets/qc.png';
 
-const BusinessPermitCertificate = ({ data }) => {
+const BusinessPermitCertificate = ({ data, onBack, onLogout }) => {
   const [loading, setLoading] = useState(false);
+  const [officials, setOfficials] = useState({});
 
   // Default data if none provided
   const defaultData = {
-    proprietor_name: 'JUAN DELA CRUZ',
-    business_name: 'DELA CRUZ STORE',
-    nature_of_business: 'RETAIL TRADE',
-    business_address: '123 Main Street, Barangay Kalusugan, Quezon City',
-    amount_paid: '500.00',
-    date_paid: '2024-01-15',
-    or_number: 'OR-2024-001',
-    received_by: 'MARIA SANTOS',
+    proprietor_name: '',
+    business_name: '',
+    nature_of_business: '',
+    business_address: '',
+    amount_paid: '',
+    date_paid: '',
+    or_number: '',
+    received_by: '',
     applicant_signature: '',
-    date_received: '2024-01-15',
-    valid_until: '2024-12-31',
-    control_number: 'BP-2024-001'
+    date_received: '',
+    valid_until: '',
+    control_number: ''
   };
 
   const certificateData = data || defaultData;
+
+  // Fetch officials data
+  useEffect(() => {
+    const fetchOfficials = async () => {
+      try {
+        const response = await fetch('/api/officials');
+        if (response.ok) {
+          const data = await response.json();
+          const officialsMap = {};
+          data.data.forEach(official => {
+            officialsMap[official.position_order] = official;
+          });
+          setOfficials(officialsMap);
+        }
+      } catch (error) {
+        console.error('Error fetching officials:', error);
+      }
+    };
+
+    fetchOfficials();
+  }, []);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -33,9 +56,18 @@ const BusinessPermitCertificate = ({ data }) => {
     });
   };
 
+  const getCurrentDate = () => {
+    const date = new Date();
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const handleExportPDF = async () => {
     if (!certificateData || !certificateData.proprietor_name || !certificateData.business_name) {
-      alert('Certificate data is incomplete. Please fill out the form completely.');
+      toast.error('Certificate data is incomplete. Please fill out the form completely.');
       return;
     }
 
@@ -55,7 +87,7 @@ const BusinessPermitCertificate = ({ data }) => {
         control_number: certificateData.control_number
       };
 
-      const response = await fetch('http://localhost:5000/api/business-permit/generate-pdf', {
+      const response = await fetch('http://localhost:3001/api/business-permit/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pdfData),
@@ -71,9 +103,13 @@ const BusinessPermitCertificate = ({ data }) => {
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
+        toast.success('PDF exported successfully');
+      } else {
+        toast.error('Failed to export PDF');
       }
     } catch (error) {
       console.error('Error exporting PDF:', error);
+      toast.error('Error exporting PDF');
     }
     setLoading(false);
   };
@@ -83,180 +119,252 @@ const BusinessPermitCertificate = ({ data }) => {
   };
 
   return (
-    <div>
-      {/* Action Buttons - Hidden on Print */}
-      <div className="flex justify-end gap-4 mb-6 print:hidden">
-        <button
-          onClick={handleExportPDF}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm"
-        >
-          {loading ? 'Exporting...' : 'Export as PDF'}
-        </button>
-        <button
-          onClick={handlePrint}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-        >
-          Print
-        </button>
-      </div>
-
-      {/* Certificate Container */}
-      <div className="w-full max-w-4xl mx-auto bg-white p-6 font-serif text-xs leading-tight">
-        {/* HEADER SECTION */}
-        <div className="text-center mb-3 pb-3 border-b-4 border-black">
-          {/* Logos and Header */}
-          <div className="flex justify-between items-start mb-2">
+      <div className="flex justify-center pt-0 pr-6 pb-6 pl-6 print:p-0 print:m-0 print:-mt-2">
+        <div className="bg-white w-full max-w-4xl shadow-lg p-8 relative print:shadow-none print:pt-0 print:px-1 print:pb-1 print:m-0 print:max-w-full print:min-h-[200mm]">
+          
+          {/* HEADER WITH THREE LOGOS */}
+          <div className="flex justify-between items-start mb-[6px] relative z-10 print:mb-[6px]">
             {/* Left Logo */}
-            <div className="w-20 h-20 border-4 border-blue-900 rounded-full flex items-center justify-center flex-shrink-0 bg-white">
-              <img src={logo} alt="Logo" className="w-18 h-18 object-contain" />
+            <div className="w-[82px] h-[82px] flex-shrink-0">
+              <div className="w-full h-full rounded-full  flex items-center justify-center bg-white relative">
+                <div className="absolute inset-0 rounded-full border-[6px] border-pink-300" style={{ margin: '6px' }}></div>
+                <div className="text-center z-10">
+                  <div className="text-pink-500 text-3xl">
+                    <img src={logo} alt="" />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Center Header */}
-            <div className="text-center flex-1 px-4">
-              <div className="font-bold text-xs mb-0.5">Republika ng Pilipinas</div>
-              <div className="text-red-600 font-bold text-xs mb-1">Lungsod Quezon</div>
-              <div className="text-blue-700 font-bold text-sm underline mb-0.5">BARANGAY KALUSUGAN</div>
-              <div className="text-xs mb-0.5">Area 25, District IV</div>
-              <div className="text-xs">Email: kalusugan@gmail.com</div>
+            {/* Center Text */}
+            <div className="text-center flex-1 mx-[18px]">
+              <p className="text-[13px] font-medium text-gray-700">Republika ng Pilipinas</p>
+              <p className="text-[13px] font-medium text-gray-700">Lungsod Quezon</p>
+              <p className="text-[13px] font-bold text-red-600 tracking-wide">Tanggapan ng Punong Barangay</p>
+              <p className="text-[15px] font-extrabold text-blue-700 tracking-wider">BARANGAY KALUSUGAN</p>
+              <p className="text-[12px] text-gray-600 mt-[4px]">Area 21, District IV</p>
+              <p className="text-[12px] text-gray-600">Quezon City</p>
+              <p className="text-[12px] text-gray-600">Email: kalusugan2014@gmail.com</p>
             </div>
 
             {/* Right Logo */}
-            <div className="w-20 h-20 border-4 border-blue-900 flex items-center justify-center flex-shrink-0 bg-white">
-              <img src={logo2} alt="Logo" className="w-18 h-18 object-contain" />
-            </div>
-          </div>
-
-          {/* Control Number */}
-          <div className="text-right mb-2 pr-2">
-            <span className="font-bold text-xs">Control Number: ________________</span>
-          </div>
-
-          {/* Title */}
-          <div className="font-bold text-base underline mb-0.5">BARANGAY CLEARANCE</div>
-          <div className="font-bold text-xs italic">For BUSINESS</div>
-        </div>
-
-        {/* CONTENT */}
-        <div className="mb-2">
-          <div className="text-xs italic mb-2">To Whom It May Concern:</div>
-
-          <div className="mb-2 text-justify text-xs leading-snug">
-            This is to certify that the undersigned approved / disapproved the application for a permit to operate / renew the business of:
-          </div>
-
-          {/* Business Details */}
-          <div className="mb-2 text-xs space-y-0.5">
-            <div><span className="font-bold">Owner/ Proprietor:</span> <span className="border-b border-black ml-1">{certificateData.proprietor_name}</span></div>
-            <div><span className="font-bold">Business Name:</span> <span className="border-b border-black ml-1">{certificateData.business_name}</span></div>
-            <div><span className="font-bold">Nature / Type of Business:</span> <span className="border-b border-black ml-1">{certificateData.nature_of_business}</span></div>
-            <div><span className="font-bold">Address of Business:</span> <span className="border-b border-black ml-1">{certificateData.business_address}</span></div>
-          </div>
-
-          <div className="mb-2 text-justify text-xs leading-snug">
-            It is further certified that the subject business establishment is nuisance / not nuisance to public order and safety. Holder of this clearance is not delinquent in the payment of taxes/occupancy fee to the Barangay.
-          </div>
-
-          <div className="mb-2 text-justify text-xs leading-snug">
-            This is being issued upon the request of the above-named applicant for presentation to the Business Permit and Licensing Office. This City, prior to the issuance of any license or permit for said business activity pursuant to Chapter II, Art. IV, Section 131, Par. C of the Local Government Code.
-          </div>
-
-          {/* Date Section */}
-          <div className="mb-2 text-xs">
-            <div className="mb-0.5">
-              <span className="font-bold">Date Issued:</span>
-              <span className="border-b border-black inline-block w-40 text-center mx-1">{formatDate(certificateData.date_received)}</span>
-              <span className="text-xs">in Barangay Kalusugan, Quezon City</span>
-            </div>
-            <div>
-              <span className="font-bold">Valid on the date of issue until</span>
-              <span className="border-b border-black inline-block w-40 text-center mx-1">{formatDate(certificateData.valid_until)}</span>
-            </div>
-          </div>
-
-          {/* Signature Section */}
-          <div className="text-center mb-3 py-2">
-            <div className="font-bold text-xs">HON. ROCKY DELA CRUZ RABANAL</div>
-            <div className="font-bold text-xs">Punong Barangay</div>
-          </div>
-
-          {/* Payment and Receiver Section */}
-          <div className="flex justify-between mb-3 text-xs gap-6">
-            <div className="w-1/2">
-              <div className="mb-0.5"><span className="font-bold">Amount Paid:</span> <span className="border-b border-black inline-block w-20">₱{certificateData.amount_paid}</span></div>
-              <div className="mb-0.5"><span className="font-bold">Date Paid:</span> <span className="border-b border-black inline-block w-20">{formatDate(certificateData.date_paid)}</span></div>
-              <div className="mb-0.5"><span className="font-bold">O.R. Number:</span> <span className="border-b border-black inline-block w-20">{certificateData.or_number}</span></div>
-              <div className="mb-0.5"><span className="font-bold">Received By:</span> <span className="border-b border-black inline-block w-20">{certificateData.received_by}</span></div>
-            </div>
-            <div className="w-1/2">
-              <div className="border-2 border-black h-14 mb-1 relative flex items-end justify-center pb-1">
-                <span className="absolute -top-2 left-1 bg-white text-xs px-1 font-bold">Signature</span>
-              </div>
-              <div className="text-xs"><span className="font-bold">Date:</span> <span className="border-b border-black inline-block w-20">{formatDate(certificateData.date_received)}</span></div>
-            </div>
-          </div>
-
-          {/* Authorized Signatories */}
-          <div className="border-t-2 border-black pt-2 mb-2">
-            <div className="text-xs font-bold text-center mb-1">AUTHORIZED SIGNATORIES</div>
-            <div className="grid grid-cols-5 gap-1 text-xs">
-              <div className="border-2 border-gray-500 p-1 text-center">
-                <div className="font-bold text-xs">Redrick M. Hara</div>
-                <div className="text-xs">Punong Barangay</div>
-              </div>
-              <div className="border-2 border-gray-500 p-1 text-center">
-                <div className="font-bold text-xs">Christopher C. Serrano</div>
-                <div className="text-xs">SK Chairperson</div>
-              </div>
-              <div className="border-2 border-gray-500 p-1 text-center">
-                <div className="font-bold text-xs">Margaret Lyra Marcos</div>
-                <div className="text-xs">Barangay Secretary</div>
-              </div>
-              <div className="border-2 border-gray-500 p-1 text-center">
-                <div className="font-bold text-xs">Edyliza D. Darion</div>
-                <div className="text-xs">Barangay Treasurer</div>
-              </div>
-              <div className="border-2 border-gray-500 p-1 text-center">
-                <div className="text-xs font-bold">SK Chairman</div>
-                <div className="font-bold text-xs">John Vincent D. Abaño</div>
+            <div className="flex-shrink-0">
+              <div className="w-[82px] h-[82px] rounded-lg  flex items-center justify-center  from-blue-100 to-red-100">
+                <div className="text-center">
+                  <div className="text-blue-600 text-2xl">
+                    <img src={qc} alt="Quezon City Logo" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Footer Signatories */}
-          <div className="grid grid-cols-4 gap-1 text-xs mt-2">
-            <div className="text-center">
-              <div className="font-bold text-xs">Elna R. Tercero</div>
-              <div className="text-xs">Barangay Health Office</div>
-            </div>
-            <div className="text-center">
-              <div className="font-bold text-xs">Robin C. Burbaje</div>
-              <div className="text-xs">Barangay Tanod</div>
-            </div>
-            <div className="text-center">
-              <div className="font-bold text-xs">Reynaldo SY. Sera</div>
-              <div className="text-xs">Business Permit Officer</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xs font-bold">SK Chairman</div>
-              <div className="font-bold text-xs">John Vincent D. Abaño</div>
+          <hr className="border-t-[4px] border-gray-800 mb-[6px] relative z-10 print:mb-[6px]" />
+
+          {/* CONTROL NUMBER BOX */}
+          <div className="flex justify-end mb-[6px] relative z-10 print:mb-[4px]">
+            <div className="text-right">
+              <p className="text-[12px] italic mb-[6px]">Control Number:</p>
+              <div className="border-[4px] border-gray-800 w-[162px] h-[26px]"></div>
             </div>
           </div>
 
-          {/* Bottom Footer */}
-          <div className="grid grid-cols-3 gap-1 text-xs mt-2 text-center border-t-2 border-gray-400 pt-1">
-            <div>
-              <div className="font-bold text-xs">Secretary</div>
-              <div className="text-xs">Frinio F. Ubando</div>
+          {/* TITLE */}
+          <h1 className="text-center font-bold text-[18px] mb-0 tracking-wide relative z-10 print:mb-0">
+            BARANGAY CLEARANCE
+          </h1>
+          <p className="text-center text-[11px] font-semibold mb-[6px] relative z-10 print:mb-[6px]">
+            For BUSINESS
+          </p>
+
+          {/* BODY */}
+          <div className="text-[12px] leading-relaxed relative z-10 print:text-[11px] print:leading-loose">
+
+            <p className="italic mb-[4px] print:mb-[4px]">To Whom It May Concern:</p>
+
+            <p className="text-justify indent-[18px] mb-[6px] text-[11px] print:mb-2">
+              This is to certify that the undersigned approved / disapproved the application for a permit to operate / renew the business of:
+            </p>
+
+            {/* INFORMATION FIELDS */}
+            <div className="space-y-[4px] mb-[6px] print:mb-3 print:space-y-1">
+              <div className="flex items-baseline gap-[8px]">
+                <span className="font-semibold whitespace-nowrap min-w-[142px] italic">Name of Proprietor</span>
+                <div className="flex-1 border-b border-black pb-[4px]">
+                  <span className="text-[13px]">{certificateData.proprietor_name}</span>
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-[8px]">
+                <span className="font-semibold whitespace-nowrap min-w-[142px] italic">Business Name</span>
+                <div className="flex-1 border-b border-black pb-[4px]">
+                  <span className="text-[13px]">{certificateData.business_name}</span>
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-[8px]">
+                <span className="font-semibold whitespace-nowrap min-w-[142px] italic">Nature / Type of Business</span>
+                <div className="flex-1 border-b border-black pb-[4px]">
+                  <span className="text-[13px]">{certificateData.nature_of_business}</span>
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-[8px]">
+                <span className="font-semibold whitespace-nowrap min-w-[142px] italic">Address of Business</span>
+                <div className="flex-1 border-b border-black pb-[4px]">
+                  <span className="text-[13px]">{certificateData.business_address}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-xs">Not valid without Official Issued Seal</div>
+
+            <p className="text-justify indent-[18px] mb-[4px] text-[11px] print:mb-2">
+              It is further certified that the subject business establishment is nuisance / not nuisance to public order and safety. Moreover, the above – named business establishment abides all applicable barangay ordinances to avoid any violations concerning said business.
+            </p>
+
+            <p className="text-justify indent-[18px] mb-[6px] text-[11px] print:mb-3">
+              This is being issued upon the request of the above-named applicant for presentation to the Business Permit and Licensing Office, this City, prior to the issuance of permit as granted for said business activity pursuant to Chapter II, Act IV, Section 152, Part of the Local Government Code.
+            </p>
+
+            {/* DATE ISSUED */}
+            <div className="flex items-baseline gap-[8px] mb-[10px] print:mb-3">
+              <span className="font-semibold italic text-[11px]">Date Issued :</span>
+              <div className="flex-1 border-b border-black pb-[4px] text-center">
+                <span className="text-[11px]"></span>
+              </div>
+              <span className="ml-2 text-[10px]">in Barangay Kalusugan, Quezon City</span>
             </div>
-            <div></div>
+
+            {/* VALIDITY */}
+            <p className="text-center text-red-600 font-semibold mb-[10px] text-[11px] print:mb-3">
+              Valid on the date of issue until <span className="border-b border-red-600 inline-block w-[130px] text-center"></span>
+            </p>
+
+            {/* SIGNATURE */}
+            <div className="flex justify-center mb-[10px] print:mb-4">
+              <div className="text-center">
+                <div className="mb-[14px] print:mb-8"></div>
+                <p className="font-bold text-[13px]">{officials[1]?.name || 'HON. ROCKY DELA CRUZ RABANAL'}</p>
+                <p className="text-[12px]">Punong Barangay</p>
+              </div>
+            </div>
+
+            {/* PAYMENT AND SIGNATURE SECTION */}
+            <div className="grid grid-cols-2 gap-[18px] mb-[6px] border-t border-gray-400 pt-[6px] print:mb-2 print:pt-3 print:gap-6">
+              <div className="space-y-[4px]">
+                <div className="flex items-baseline gap-[6px]">
+                  <span className="font-semibold whitespace-nowrap italic text-[10px]">Amount Paid:</span>
+                  <div className="flex-1 border-b border-black pb-[4px]"></div>
+                </div>
+                <div className="flex items-baseline gap-[6px]">
+                  <span className="font-semibold whitespace-nowrap italic text-[10px]">Date Paid:</span>
+                  <div className="flex-1 border-b border-black pb-[4px]"></div>
+                </div>
+                <div className="flex items-baseline gap-[6px]">
+                  <span className="font-semibold whitespace-nowrap italic text-[10px]">O.R. Number:</span>
+                  <div className="flex-1 border-b border-black pb-[4px]"></div>
+                </div>
+                <div className="flex items-baseline gap-[6px]">
+                  <span className="font-semibold whitespace-nowrap italic text-[10px]">Received By:</span>
+                  <div className="flex-1 border-b border-black pb-[4px]"></div>
+                </div>
+              </div>
+
+              <div>
+                <p className="font-semibold text-[10px] mb-[6px]">Received By:</p>
+                <div className="border-b border-black h-[34px] mb-[4px] print:h-12"></div>
+                <p className="text-[9px] text-center italic">Signature over Printed Name of Applicant/Representative</p>
+                <div className="flex items-baseline gap-[6px] mt-[6px]">
+                  <span className="font-semibold whitespace-nowrap italic text-[10px]">Date:</span>
+                  <div className="flex-1 border-b border-black pb-[4px]"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* BARANGAY OFFICIALS FOOTER */}
+            <div className="border-t-[4px] border-gray-800 pt-[4px] print:pt-2">
+              {/* Row 1 */}
+              <div className="grid grid-cols-4 gap-[6px] text-[9px] text-center mb-[4px] print:mb-1">
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[2]?.name || 'Kgd. Roderick M. Hara'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[2]?.committee?.split(',')[0] || 'Committee On Livelihood'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[2]?.committee?.split(',')[1]?.trim() || 'Cooperative, Industry, And Senior Citizen Affairs'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[3]?.name || 'Kgd. Christopher C. Serrano'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[3]?.committee?.split(',')[0] || 'Committee On Public Order, Public Safety, And'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[3]?.committee?.split(',')[1]?.trim() || 'Traffic, Welfare And Light'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[4]?.name || 'Kgd. Margaret Lyra Maruzza'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[4]?.committee?.split(',')[0] || 'Committee On Health, Education,'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[4]?.committee?.split(',')[1]?.trim() || 'Livelihood And Services'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[5]?.name || 'Kgd. Ferdison D. Barbon'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[5]?.committee || 'Committee On Streets And Roads, Good Pavement, Animal Rights Advocacy And Justice'}</p>
+                </div>
+              </div>
+
+              {/* Row 2 */}
+              <div className="grid grid-cols-4 gap-[6px] text-[9px] text-center mb-[4px] print:mb-1">
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[6]?.name || 'Kgd. Eloisa R. Fayanes'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[6]?.committee?.split(',')[0] || 'Committee On Sanitation, Beautification, Solid Waste'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[6]?.committee?.split(',')[1]?.trim() || 'Mgmt, Parks, Public Services, and Communication'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[7]?.name || 'Kgd. Robin C. Portaje'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[7]?.committee?.split(',')[0] || 'Committee On Infrastructure, Public Planning, Building,'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[7]?.committee?.split(',')[1]?.trim() || 'Finance, And Utilities'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[8]?.name || 'Kgd. Reynaldo SJ. Sara'}</p>
+                  <p className="text-[8px] text-gray-600 leading-tight">{officials[8]?.committee || 'Committee On Sanitation And Environmental Protection'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-red-600 leading-tight">{officials[9]?.title || 'SK Chairman'}</p>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[9]?.name || 'John Vincent D. Aliado'}</p>
+                </div>
+              </div>
+
+              {/* Row 3 */}
+              <div className="grid grid-cols-4 gap-[6px] text-[9px] text-center">
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[10]?.title || 'Barangay Secretary'}</p>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[10]?.name || 'Corazon L. Prado'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[11]?.title || 'Barangay Treasurer'}</p>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[11]?.name || 'Fritzie P. Ubpardo'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-red-600 leading-tight">{officials[12]?.title || 'BPSO Executive Officer'}</p>
+                  <p className="font-bold text-blue-700 leading-tight">{officials[12]?.name || 'Elmer Z. Pinca'}</p>
+                </div>
+                <div>
+                  <p className="text-[8px] font-semibold text-right leading-tight">Not Valid Without Official Barangay Seal</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="flex justify-end gap-3 mt-6 relative z-10 print:hidden">
+            {onBack && (
+              <button onClick={onBack} className="px-4 py-2 border border-gray-400 rounded-md bg-white hover:bg-gray-50">
+                Back
+              </button>
+            )}
+            <button
+              onClick={handlePrint}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            >
+              Generate
+            </button>
+            
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

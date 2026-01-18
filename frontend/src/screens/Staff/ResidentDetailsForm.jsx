@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import CertificateOfIndigency from '../certificates/CertificateOfIndigency';
 import Residency from '../certificates/Residency';
 import Residency2 from '../certificates/Residency2';
@@ -7,7 +8,6 @@ import CertificateOfEmployment from '../certificates/CertificateOfEmployment';
 const ResidentDetailsForm = ({ onBack, onLogout }) => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const [selectedCertificate, setSelectedCertificate] = useState(null);
 
   const handleChange = (e) => {
@@ -44,16 +44,16 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
     }
 
     // If no certificate type selected, show error
-    setMessage('Please select a certificate type');
+    toast.error('Please select a certificate type');
     setLoading(false);
   };
 
   // Render the selected certificate with the form data
   if (selectedCertificate === 'indigency') {
     return (
-      <CertificateOfIndigency 
-        formData={formData} 
-        onBack={() => setSelectedCertificate(null)} 
+      <CertificateOfIndigency
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
         onLogout={onLogout}
       />
     );
@@ -61,9 +61,9 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
 
   if (selectedCertificate === 'residency') {
     return (
-      <Residency 
-        formData={formData} 
-        onBack={() => setSelectedCertificate(null)} 
+      <Residency
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
         onLogout={onLogout}
       />
     );
@@ -71,9 +71,9 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
 
   if (selectedCertificate === 'residency2') {
     return (
-      <Residency2 
-        formData={formData} 
-        onBack={() => setSelectedCertificate(null)} 
+      <Residency2
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
         onLogout={onLogout}
       />
     );
@@ -81,9 +81,9 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
 
   if (selectedCertificate === 'employment') {
     return (
-      <CertificateOfEmployment 
-        formData={formData} 
-        onBack={() => setSelectedCertificate(null)} 
+      <CertificateOfEmployment
+        formData={formData}
+        onBack={() => setSelectedCertificate(null)}
         onLogout={onLogout}
       />
     );
@@ -593,11 +593,10 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
           </label>
         </div>
 
-          {message && <p className="mb-4 text-green-600">{message}</p>}
           <div className="flex justify-end gap-4">
             <button type="button" onClick={onBack} className="px-6 py-3 bg-gray-200 rounded-md">Cancel</button>
             <button type="submit" disabled={loading} className="px-6 py-3 bg-blue-600 text-white rounded-md disabled:opacity-50">
-              {loading ? 'Submitting...' : 'Generate'}
+              {loading ? 'Generating...' : 'Preview Certificate'}
             </button>
           </div>
         </form>

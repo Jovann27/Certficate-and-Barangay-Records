@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 export default function BarangayInhabitantsList({ onNavigate, onLogout }) {
   const [inhabitants, setInhabitants] = useState([]);
@@ -22,6 +23,8 @@ export default function BarangayInhabitantsList({ onNavigate, onLogout }) {
       const inhabitantsData = await inhabitantsResponse.json();
       if (inhabitantsData.success) {
         setInhabitants(inhabitantsData.data);
+      } else {
+        toast.error('Failed to load inhabitants data');
       }
 
       // Fetch residents for drag and drop
@@ -33,9 +36,12 @@ export default function BarangayInhabitantsList({ onNavigate, onLogout }) {
       const residentsData = await residentsResponse.json();
       if (residentsData.success) {
         setResidents(residentsData.data);
+      } else {
+        toast.error('Failed to load residents data');
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Error fetching data');
     } finally {
       setLoading(false);
     }
@@ -91,13 +97,13 @@ export default function BarangayInhabitantsList({ onNavigate, onLogout }) {
         // Remove from residents list and add to inhabitants
         setResidents(prev => prev.filter(r => r.id !== draggedResident.id));
         fetchData(); // Refresh inhabitants list
-        alert('Resident successfully added to barangay inhabitants!');
+        toast.success('Resident successfully added to barangay inhabitants!');
       } else {
-        alert('Failed to add resident to barangay inhabitants');
+        toast.error('Failed to add resident to barangay inhabitants');
       }
     } catch (error) {
       console.error('Error adding resident:', error);
-      alert('Error occurred while adding resident');
+      toast.error('Error occurred while adding resident');
     }
 
     setDraggedResident(null);

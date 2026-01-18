@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const Dashboard = ({ onNavigate, onLogout }) => {
   const [records, setRecords] = useState([]);
@@ -23,9 +24,15 @@ const Dashboard = ({ onNavigate, onLogout }) => {
       const result = await response.json();
       if (result.success) {
         setRecords(result.data);
+        if (search) {
+          toast.success('Records loaded successfully');
+        }
+      } else {
+        toast.error('Failed to load records');
       }
     } catch (error) {
       console.error('Error fetching records:', error);
+      toast.error('Error fetching records');
     }
   };
 
@@ -38,9 +45,12 @@ const Dashboard = ({ onNavigate, onLogout }) => {
       const result = await response.json();
       if (result.success) {
         setStats(result.data);
+      } else {
+        toast.error('Failed to load statistics');
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      toast.error('Error fetching statistics');
     } finally {
       setStatsLoading(false);
       setLoading(false);

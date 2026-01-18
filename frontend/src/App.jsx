@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import LoginSystem from './screens/LoginSystem';
 import AdminDashboard from './screens/Admin/AdminDashboard';
 import Dashboard from './screens/Staff/Dashboard';
@@ -104,7 +106,12 @@ function App() {
     }
   };
 
-  return renderView();
+  return (
+    <>
+      {renderView()}
+      <ToastContainer />
+    </>
+  );
 }
 
 export default App;

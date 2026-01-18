@@ -192,6 +192,53 @@ const createTables = async () => {
     await pool.execute(businessPermitsTable);
     console.log('✓ Business permits table ready');
 
+    // Officials table
+    const officialsTable = `
+      CREATE TABLE IF NOT EXISTS officials (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        position VARCHAR(100) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        committee VARCHAR(255),
+        position_order INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_position (position),
+        INDEX idx_position_order (position_order)
+      )
+    `;
+
+    await pool.execute(officialsTable);
+    console.log('✓ Officials table ready');
+
+    // Insert default officials if table is empty
+    const [existingOfficials] = await pool.execute('SELECT COUNT(*) as count FROM officials');
+
+    if (existingOfficials[0].count === 0) {
+      const defaultOfficials = [
+        ['Punong Barangay', 'HON. ROCKY DELA CRUZ RABANAL', 'Punong Barangay', '', 1],
+        ['Barangay Kagawad', 'Kgd. Roderick M. Hara', 'Barangay Kagawad', 'Committee On Livelihood Cooperative, Industry, And Senior Citizen Affairs', 2],
+        ['Barangay Kagawad', 'Kgd. Christopher C. Serrano', 'Barangay Kagawad', 'Committee On Public Order, Public Safety, And Traffic, Welfare And Light', 3],
+        ['Barangay Kagawad', 'Kgd. Margaret Lyra Maruzza', 'Barangay Kagawad', 'Committee On Health, Education, Livelihood And Services', 4],
+        ['Barangay Kagawad', 'Kgd. Ferdison D. Barbon', 'Barangay Kagawad', 'Committee On Streets And Roads, Good Pavement, Animal Rights Advocacy And Justice', 5],
+        ['Barangay Kagawad', 'Kgd. Eloisa R. Fayanes', 'Barangay Kagawad', 'Committee On Sanitation, Beautification, Solid Waste Mgmt, Parks, Public Services, and Communication', 6],
+        ['Barangay Kagawad', 'Kgd. Robin C. Portaje', 'Barangay Kagawad', 'Committee On Infrastructure, Public Planning, Building, Finance, And Utilities', 7],
+        ['Barangay Kagawad', 'Kgd. Reynaldo SJ. Sara', 'Barangay Kagawad', 'Committee On Sanitation And Environmental Protection', 8],
+        ['SK Chairperson', 'John Vincent D. Aliado', 'SK Chairperson', '', 9],
+        ['Barangay Secretary', 'Corazon L. Prado', 'Barangay Secretary', '', 10],
+        ['Barangay Treasurer', 'Fritzie P. Ubpardo', 'Barangay Treasurer', '', 11],
+        ['BPSO Executive Officer', 'Elmer Z. Pinca', 'BPSO Executive Officer', '', 12]
+      ];
+
+      for (const official of defaultOfficials) {
+        await pool.execute(
+          'INSERT INTO officials (position, name, title, committee, position_order) VALUES (?, ?, ?, ?, ?)',
+          official
+        );
+      }
+      console.log('✓ Default officials data inserted');
+    }
+
     // Create default admin user if not exists
     const [existingAdmin] = await pool.execute(
       'SELECT id FROM users WHERE username = ?',

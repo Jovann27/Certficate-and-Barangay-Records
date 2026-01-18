@@ -4,6 +4,7 @@ const ResidentDetails = require('../models/ResidentDetails');
 const Kasambahay = require('../models/Kasambahay');
 const BarangayInhabitants = require('../models/BarangayInhabitants');
 const BusinessPermit = require('../models/BusinessPermit');
+const Official = require('../models/Official');
 const { validatePersonalDetails, validateKasambahay, validateBarangayInhabitants, validateBusinessPermit } = require('../middleware/validation');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
@@ -85,6 +86,18 @@ router.post('/business-permit', optionalAuth, validateBusinessPermit, async (req
 router.post('/business-permit/generate-pdf', optionalAuth, async (req, res) => {
   try {
     const data = req.body;
+
+    // Fetch officials data
+    let officialsMap = {};
+    try {
+      const officials = await Official.getAllOfficials();
+      officials.forEach(official => {
+        officialsMap[official.position_order] = official;
+      });
+    } catch (error) {
+      console.warn('Failed to fetch officials for PDF, using defaults:', error);
+      // officialsMap remains empty, will use fallback values
+    }
 
     // Generate HTML content for the certificate
     const htmlContent = `
@@ -423,7 +436,7 @@ router.post('/business-permit/generate-pdf', optionalAuth, async (req, res) => {
           </div>
 
           <div class="signature-area">
-            <div class="punong-name">HON. ROCKY DELA CRUZ RABANAL</div>
+            <div class="punong-name">${officialsMap[1]?.name || 'HON. ROCKY DELA CRUZ RABANAL'}</div>
             <div class="punong-title">Punong Barangay</div>
           </div>
 
@@ -737,6 +750,80 @@ router.get('/resident-details', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Resident details fetch error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database error occurred'
+    });
+  }
+});
+
+// Officials Management Routes
+router.get('/officials', optionalAuth, async (req, res) => {
+  try {
+    const officials = await Official.getAllOfficials();
+    res.json({
+      success: true,
+      data: officials
+    });
+  } catch (error) {
+    console.error('Officials fetch error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database error occurred'
+    });
+  }
+});
+
+router.put('/officials/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, title, committee } = req.body;
+
+    const result = await Official.updateOfficial(id, {
+      name,
+      title,
+      committee
+    });
+
+    if (result) {
+      res.json({
+        success: true,
+        message: 'Official updated successfully'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Official not found'
+      });
+    }
+  } catch (error) {
+    console.error('Official update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database error occurred'
+    });
+  }
+});
+
+router.post('/officials', authenticateToken, async (req, res) => {
+  try {
+    const { position, name, title, committee, position_order } = req.body;
+
+    const result = await Official.createOfficial({
+      position,
+      name,
+      title,
+      committee,
+      position_order
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Official created successfully',
+      data: result
+    });
+  } catch (error) {
+    console.error('Official creation error:', error);
     res.status(500).json({
       success: false,
       message: 'Database error occurred'
