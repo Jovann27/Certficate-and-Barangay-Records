@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Logo from '../../assets/kalusugan.png';
 
-const ManageUsers = ({ onBack, onLogout }) => {
+const ManageUsers = ({ onNavigate, onLogout }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -178,36 +179,33 @@ const ManageUsers = ({ onBack, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-green-600 text-white p-2 rounded-lg">
-                <span className="text-xl font-bold">🏛️</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Barangay Kalusugan</h1>
-                <p className="text-sm text-gray-600">Management System</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">Admin User</p>
-                <p className="text-xs text-gray-600">{new Date().toLocaleDateString()}</p>
-              </div>
-              <button onClick={onLogout} className="bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100 transition-colors">
-                Logout
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-100">
+      {/* NAVBAR */}
+      <header className="bg-white px-8 py-4 flex justify-between items-center shadow border-b-4 border-blue-600">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br rounded-full flex items-center justify-center text-white font-bold text-lg">
+            <img src={Logo} alt="" />
           </div>
+          <span className="font-semibold text-lg">Barangay Kulusugan</span>
+        </div>
+
+        <nav className="flex gap-8 text-gray-600">
+          <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('admin-dashboard')}>Dashboard</span>
+          <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('barangay-inhabitants-list')}>Records</span>
+          <span className="font-semibold text-black cursor-pointer hover:text-blue-600" onClick={() => onNavigate('manage-users')}>User Management</span>
+        </nav>
+
+        <div className="text-sm flex items-center gap-3">
+          <span>Admin User</span>
+          <button onClick={onLogout} className="text-red-500 cursor-pointer hover:text-red-700 text-lg">
+            ⎋
+          </button>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-6xl mx-auto">
-          <button onClick={onBack} className="mb-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">← Back to Dashboard</button>
+          <button onClick={() => onNavigate('admin-dashboard')} className="mb-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">← Back to Dashboard</button>
 
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <div className="flex justify-between items-center mb-6">

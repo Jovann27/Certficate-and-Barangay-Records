@@ -85,7 +85,7 @@ function App() {
       case 'admin-dashboard':
         return <AdminDashboard onLogout={handleLogout} onNavigate={handleNavigate} />;
       case 'manage-users':
-        return <ManageUsers onBack={() => setCurrentView('admin-dashboard')} onLogout={handleLogout} />;
+        return <ManageUsers onNavigate={handleNavigate} onLogout={handleLogout} />;
       case 'documents':
         return <Documents onNavigate={handleNavigate} onLogout={handleLogout} residentId={viewData?.residentId} />;
       case 'certificate-residency':

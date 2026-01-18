@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import BusinessPermitCertificate from "../certificates/BusinessPermitCertificate";
+import Logo from "../../assets/kalusugan.png";
 import {
   BarChart,
   Bar,
@@ -86,10 +87,10 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
       {/* NAVBAR */}
       <header className="bg-white px-8 py-4 flex justify-between items-center shadow border-b-4 border-blue-600">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-bold text-lg">
-            ◆
+          <div className="w-10 h-10 bg-gradient-to-br rounded-full flex items-center justify-center text-white font-bold text-lg">
+            <img src={Logo} alt="" />
           </div>
-          <span className="font-semibold text-lg">Barangay Kulumsan</span>
+          <span className="font-semibold text-lg">Barangay Kulusugan</span>
         </div>
 
         <nav className="flex gap-8 text-gray-600">
@@ -180,7 +181,7 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
           {/* Employment Status Card */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h4 className="text-gray-600 text-sm font-medium mb-4">Employment Status</h4>
-            <div className="flex items-center justify-center h-40">
+            <div className="flex items-center justify-center h-40 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie

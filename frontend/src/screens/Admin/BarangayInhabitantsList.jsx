@@ -133,7 +133,7 @@ export default function BarangayInhabitantsList({ onNavigate, onLogout }) {
         <nav className="flex gap-8 text-gray-600">
           <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('admin-dashboard')}>Dashboard</span>
           <span className="font-semibold text-black cursor-pointer hover:text-blue-600">Records</span>
-          <span className="cursor-pointer hover:text-blue-600">User Management</span>
+          <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('manage-users')}>User Management</span>
         </nav>
 
         <div className="text-sm flex items-center gap-3">
