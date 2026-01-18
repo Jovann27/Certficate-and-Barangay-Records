@@ -4,6 +4,7 @@ const Dashboard = ({ onNavigate, onLogout }) => {
   const [records, setRecords] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
 
@@ -29,6 +30,9 @@ const Dashboard = ({ onNavigate, onLogout }) => {
   };
 
   const fetchStats = async () => {
+    if (statsLoading) return; // Prevent multiple simultaneous calls
+
+    setStatsLoading(true);
     try {
       const response = await fetch('http://localhost:3001/api/stats');
       const result = await response.json();
@@ -38,6 +42,7 @@ const Dashboard = ({ onNavigate, onLogout }) => {
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
+      setStatsLoading(false);
       setLoading(false);
     }
   };

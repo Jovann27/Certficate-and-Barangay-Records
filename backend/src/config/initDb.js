@@ -35,6 +35,7 @@ const createTables = async () => {
         occupation VARCHAR(100),
         date_of_birth DATE NOT NULL,
         place_of_birth VARCHAR(255) NOT NULL,
+        citizenship VARCHAR(100) NOT NULL DEFAULT 'Filipino',
         employment_status ENUM('Employed', 'Unemployed', 'Self-Employed', 'Student', 'Retired') NOT NULL,
         contact_no VARCHAR(20) NOT NULL,
         province VARCHAR(100) NOT NULL,
@@ -169,6 +170,18 @@ const createTables = async () => {
 
     await pool.execute(personalDetailsTable);
     console.log('✓ Resident details table ready');
+
+    // Add citizenship column to resident_details if it doesn't exist (for existing databases)
+    try {
+      await pool.execute(`
+        ALTER TABLE resident_details
+        ADD COLUMN IF NOT EXISTS citizenship VARCHAR(100) NOT NULL DEFAULT 'Filipino'
+      `);
+      console.log('✓ Citizenship column added to resident_details table');
+    } catch (error) {
+      // Column might already exist or ALTER TABLE not supported in this MySQL version
+      console.log('Note: Citizenship column check completed');
+    }
 
     await pool.execute(kasambahayTable);
     console.log('✓ Kasambahay registration table ready');

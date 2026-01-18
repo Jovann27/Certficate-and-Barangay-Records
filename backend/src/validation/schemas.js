@@ -15,6 +15,7 @@ const personalDetailsSchema = Joi.object({
   occupation: Joi.string().max(100).allow(''),
   date_of_birth: Joi.date().required(),
   place_of_birth: Joi.string().max(255).required(),
+  citizenship: Joi.string().max(100).required(),
   employment_status: Joi.string().valid('Employed', 'Unemployed', 'Self-Employed', 'Student', 'Retired').required(),
   contact_no: Joi.string().pattern(/^[0-9+\-\s()]+$/).max(20).required(),
   province: Joi.string().max(100).required(),

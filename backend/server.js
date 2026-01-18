@@ -133,12 +133,10 @@ app.use((err, req, res, next) => {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
   process.exit(0);
 });
 
@@ -156,11 +154,9 @@ const startServer = async () => {
 
     // Start server
     app.listen(port, () => {
-      logger.info(`Server running on http://localhost:${port}`);
       console.log(`🚀 Server running on http://localhost:${port}`);
     });
   } catch (error) {
-    logger.error('Failed to start server:', error);
     console.error('❌ Failed to start server:', error.message);
     process.exit(1);
   }

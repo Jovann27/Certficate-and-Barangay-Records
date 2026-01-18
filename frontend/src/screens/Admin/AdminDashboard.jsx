@@ -21,12 +21,16 @@ import {
 export default function AdminDashboard({ onLogout, onNavigate }) {
   const [stats, setStats] = useState({});
   const [timePeriod, setTimePeriod] = useState("This year");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchStats();
   }, [timePeriod]);
 
   const fetchStats = async () => {
+    if (loading) return; // Prevent multiple simultaneous calls
+
+    setLoading(true);
     try {
       const response = await fetch('http://localhost:3001/api/stats', {
         headers: {
@@ -39,6 +43,8 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
