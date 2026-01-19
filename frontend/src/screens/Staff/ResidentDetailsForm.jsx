@@ -4,8 +4,9 @@ import CertificateOfIndigency from '../certificates/CertificateOfIndigency';
 import Residency from '../certificates/Residency';
 import Residency2 from '../certificates/Residency2';
 import CertificateOfEmployment from '../certificates/CertificateOfEmployment';
+import BusinessPermitCertificate from '../certificates/BusinessPermitCertificate';
 
-const ResidentDetailsForm = ({ onBack, onLogout }) => {
+const ResidentDetailsForm = ({ onBack, onLogout, user }) => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
@@ -41,10 +42,22 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
       setSelectedCertificate('employment');
       setLoading(false);
       return;
+    } else if (certificateType === 'business-permit') {
+      setSelectedCertificate('business-permit');
+      setLoading(false);
+      return;
     }
 
-    // If no certificate type selected, show error
-    toast.error('Please select a certificate type');
+    // If no certificate type selected, show error (only for non-admin users)
+    if (user?.role !== 'admin') {
+      toast.error('Please select a certificate type');
+      setLoading(false);
+      return;
+    }
+
+    // For admin users, allow proceeding without certificate type
+    // Default to residency for display purposes
+    setSelectedCertificate('residency');
     setLoading(false);
   };
 
@@ -83,6 +96,33 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
     return (
       <CertificateOfEmployment
         formData={formData}
+        onBack={() => setSelectedCertificate(null)}
+        onLogout={onLogout}
+      />
+    );
+  }
+
+  if (selectedCertificate === 'business-permit') {
+    // Prepare business data for the certificate
+    const certificateData = {
+      proprietor_name: formData.proprietorName,
+      business_name: formData.businessName,
+      nature_of_business: formData.natureOfBusiness,
+      business_address: formData.businessAddress,
+      date_received: formData.dateIssued,
+      received_by: formData.representativeName,
+      valid_until: formData.date ? `${new Date(formData.date).getFullYear()}-12-31` : '2024-12-31',
+      control_number: `BP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+      amount_paid: formData.amountPaid,
+      date_paid: formData.datePaid,
+      or_number: formData.orNumber
+    };
+
+    return (
+      <BusinessPermitCertificate
+        data={certificateData}
+        formData={formData}
+        onSuccess={() => setSelectedCertificate(null)}
         onBack={() => setSelectedCertificate(null)}
         onLogout={onLogout}
       />
@@ -264,21 +304,22 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
           <div>
             <label className="block text-sm mb-2">
-              Certificate Type <span className="text-red-500">*</span>
+              Certificate Type {user?.role !== 'admin' && <span className="text-red-500">*</span>}
             </label>
-            <select name="certificate_type" onChange={handleChange} value={formData.certificate_type || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
+            <select name="certificate_type" onChange={handleChange} value={formData.certificate_type || ''} className="w-full p-3 border border-gray-300 rounded-md" required={user?.role !== 'admin'}>
               <option value="">Select Type</option>
               <option value="indigency">Certificate of Indigency</option>
               <option value="residency">Certificate of Residency</option>
               <option value="residency2">Certificate of Residency II</option>
               <option value="employment">Certificate of Employment</option>
+              <option value="business-permit">Business Permit Certificate</option>
             </select>
           </div>
           <div>
             <label className="block text-sm mb-2">
-              Purpose <span className="text-red-500">*</span>
+              Purpose {user?.role !== 'admin' && <span className="text-red-500">*</span>}
             </label>
-            <select name="purpose" onChange={handleChange} value={formData.purpose || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
+            <select name="purpose" onChange={handleChange} value={formData.purpose || ''} className="w-full p-3 border border-gray-300 rounded-md" required={user?.role !== 'admin'}>
               <option value="">Select Purpose</option>
               <option value="employment">Employment</option>
               <option value="school">School Requirements</option>
@@ -304,6 +345,321 @@ const ResidentDetailsForm = ({ onBack, onLogout }) => {
             <input name="resident_id" onChange={handleChange} value={formData.resident_id || ''} type="number" className="w-full p-3 border border-gray-300 rounded-md" placeholder="Optional" />
           </div>
         </div>
+
+        {formData.certificate_type === 'business-permit' && (
+          <>
+            <h2 className="flex items-center gap-3 mb-6 text-xl font-semibold">
+              🏢 Business Information
+            </h2>
+
+            {/* Application Type Section */}
+            <div className="bg-gray-50 p-4 rounded mb-6">
+              <div className="grid grid-cols-12 gap-4 items-end">
+                <div className="col-span-6 sm:col-span-4">
+                  <label className="block text-sm font-medium mb-2">
+                    Application type <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="applicationType"
+                        value="NEW"
+                        checked={formData.applicationType === 'NEW'}
+                        onChange={handleChange}
+                        className="w-4 h-4"
+                        required={formData.certificate_type === 'business-permit'}
+                      />
+                      <span className="text-sm">NEW</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="applicationType"
+                        value="OLD"
+                        checked={formData.applicationType === 'OLD'}
+                        onChange={handleChange}
+                        className="w-4 h-4"
+                        required={formData.certificate_type === 'business-permit'}
+                      />
+                      <span className="text-sm">OLD</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="col-span-6 sm:col-span-4">
+                  <label className="block text-sm font-medium mb-2">
+                    Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Business Information Section */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-blue-600 text-lg">◉</span>
+                <h3 className="font-semibold text-gray-800">Business Information</h3>
+              </div>
+              <div className="space-y-4 bg-gray-50 p-4 rounded">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Name of Business <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="businessName"
+                    value={formData.businessName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Nature of Business <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="natureOfBusiness"
+                    value={formData.natureOfBusiness}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Name of Proprietor <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="proprietorName"
+                    value={formData.proprietorName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Address of Business <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="businessAddress"
+                    value={formData.businessAddress}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Registration Details Section */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-blue-600 text-lg">◉</span>
+                <h3 className="font-semibold text-gray-800">Registration Details</h3>
+              </div>
+              <div className="space-y-4 bg-gray-50 p-4 rounded">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    BRN Registration Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="brnNumber"
+                    value={formData.brnNumber}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    DTI Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="dtiNumber"
+                    value={formData.dtiNumber}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Mayor's Permit Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="mayorsPermitNumber"
+                    value={formData.mayorsPermitNumber}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Date Issued <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="dateIssued"
+                      value={formData.dateIssued}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                      required={formData.certificate_type === 'business-permit'}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="emailAddress"
+                      value={formData.emailAddress}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                      required={formData.certificate_type === 'business-permit'}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Contact Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Representation Information Section */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-blue-600 text-lg">◉</span>
+                <h3 className="font-semibold text-gray-800">Representation Information</h3>
+              </div>
+              <div className="space-y-4 bg-gray-50 p-4 rounded">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Name Of Representative <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="representativeName"
+                    value={formData.representativeName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Position <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="position"
+                    value={formData.position}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Information Section */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-blue-600 text-lg">◉</span>
+                <h3 className="font-semibold text-gray-800">Payment Information</h3>
+              </div>
+              <div className="space-y-4 bg-gray-50 p-4 rounded">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Amount Paid <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="amountPaid"
+                    value={formData.amountPaid}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    placeholder="0.00"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Date Paid <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="datePaid"
+                    value={formData.datePaid}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    O.R. Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="orNumber"
+                    value={formData.orNumber}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    placeholder="Official Receipt Number"
+                    required={formData.certificate_type === 'business-permit'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy Consent */}
+            <div className="mb-6">
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  name="privacyConsent"
+                  checked={formData.privacyConsent}
+                  onChange={handleChange}
+                  className="w-4 h-4 mt-1"
+                  required={formData.certificate_type === 'business-permit'}
+                />
+                <span className="text-xs text-gray-700">
+                  I here-seek and agree to the Data Privacy Statement and certify that all information provided is true, accurate, and complete.
+                </span>
+              </label>
+            </div>
+          </>
+        )}
 
         <h2 className="flex items-center gap-3 mb-6 text-xl font-semibold">
           📋 Other Information

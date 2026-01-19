@@ -20,7 +20,7 @@ const Dashboard = ({ onNavigate, onLogout }) => {
       if (search) params.append('search', search);
       params.append('limit', limit.toString());
 
-      const response = await fetch(`http://localhost:3001/api/records?${params}`);
+      const response = await fetch(`/api/records?${params}`);
       const result = await response.json();
       if (result.success) {
         setRecords(result.data);
@@ -41,7 +41,7 @@ const Dashboard = ({ onNavigate, onLogout }) => {
 
     setStatsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/stats');
+      const response = await fetch('/api/stats');
       const result = await response.json();
       if (result.success) {
         setStats(result.data);
@@ -62,9 +62,28 @@ const Dashboard = ({ onNavigate, onLogout }) => {
     fetchRecords(searchTerm);
   };
 
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    fetchRecords(); // Reload all records
+  };
+
   const handleFilter = (filterValue) => {
     setFilter(filterValue);
-    // Apply filter logic here if needed
+  };
+
+  // Filter records based on selected filter
+  const getFilteredRecords = () => {
+    if (filter === 'all') return records;
+
+    const typeMapping = {
+      'personal': 'Personal Details',
+      'business': 'Business Permit',
+      'kasambahay': 'Kasambahay',
+      'rbi': 'Barangay Inhabitants Record'
+    };
+
+    const targetType = typeMapping[filter];
+    return records.filter(record => record.type === targetType);
   };
 
   const StatCard = ({ title, value, icon, color, change }) => (
@@ -177,13 +196,6 @@ const Dashboard = ({ onNavigate, onLogout }) => {
               onClick={() => onNavigate('personal')}
             />
             <QuickActionCard
-              title="Business Permit Application"
-              description="Apply for barangay business permit"
-              icon="🏢"
-              onClick={() => onNavigate('business')}
-              color="bg-yellow-50 hover:bg-yellow-100"
-            />
-            <QuickActionCard
               title="Barangay Records"
               description="Record of Barangay Inhabitants"
               icon="📝"
@@ -213,6 +225,15 @@ const Dashboard = ({ onNavigate, onLogout }) => {
                   >
                     Search
                   </button>
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </form>
                 <select
                   value={filter}
@@ -248,8 +269,8 @@ const Dashboard = ({ onNavigate, onLogout }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {records.length > 0 ? (
-                      records.slice(0, 10).map((record, index) => (
+                    {getFilteredRecords().length > 0 ? (
+                      getFilteredRecords().slice(0, 10).map((record, index) => (
                         <tr key={record.id || index} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4 text-gray-900 font-medium">{record.name}</td>
                           <td className="py-3 px-4 text-gray-600">{record.address}</td>
@@ -277,8 +298,10 @@ const Dashboard = ({ onNavigate, onLogout }) => {
                         <td colSpan="5" className="py-12 px-4 text-center text-gray-500">
                           <div className="flex flex-col items-center">
                             <span className="text-4xl mb-2">📋</span>
-                            <p>No records found</p>
-                            <p className="text-sm text-gray-400 mt-1">New records will appear here</p>
+                            <p>No {filter === 'all' ? '' : filter.replace('-', ' ')} records found</p>
+                            <p className="text-sm text-gray-400 mt-1">
+                              {filter === 'all' ? 'New records will appear here' : 'Try selecting a different filter'}
+                            </p>
                           </div>
                         </td>
                       </tr>

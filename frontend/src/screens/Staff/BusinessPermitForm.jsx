@@ -46,12 +46,12 @@ const BusinessPermitForm = ({ onBack, onLogout }) => {
     nature_of_business: formData.natureOfBusiness,
     business_address: formData.businessAddress,
     date_received: formData.dateIssued,
-    received_by: formData.representativeName,
     valid_until: formData.date ? `${new Date(formData.date).getFullYear()}-12-31` : '2024-12-31',
     control_number: `BP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-    amount_paid: formData.amountPaid,
-    date_paid: formData.datePaid,
-    or_number: formData.orNumber
+    amount_paid: '',
+    date_paid: '',
+    or_number: '',
+    received_by: formData.representativeName
   };
 
   if (showCertificate) {
@@ -59,7 +59,11 @@ const BusinessPermitForm = ({ onBack, onLogout }) => {
       <div className="min-h-screen bg-blue-50 py-10">
         <div className="max-w-4xl mx-auto">
           <button onClick={() => setShowCertificate(false)} className="mb-4 px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 no-print">← Back to Form</button>
-          <BusinessPermitCertificate data={certificateData} />
+          <BusinessPermitCertificate
+            data={certificateData}
+            formData={formData}
+            onSuccess={onBack}
+          />
         </div>
       </div>
     );
@@ -337,6 +341,8 @@ const BusinessPermitForm = ({ onBack, onLogout }) => {
                   </div>
                 </div>
               </div>
+
+
 
               {/* Privacy Consent */}
               <div>

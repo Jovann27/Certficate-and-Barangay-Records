@@ -22,11 +22,13 @@ import {
 
 export default function AdminDashboard({ onLogout, onNavigate }) {
   const [stats, setStats] = useState({});
+  const [monthlyStats, setMonthlyStats] = useState([]);
   const [timePeriod, setTimePeriod] = useState("This year");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchStats();
+    fetchMonthlyStats();
   }, [timePeriod]);
 
   const fetchStats = async () => {
@@ -54,20 +56,40 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
     }
   };
 
-  // Prepare data for charts from database stats
-  const documentStats = [
-    { month: 'JAN', value: stats.barangay_inhabitants?.total || 0 },
-    { month: 'FEB', value: stats.personal_details?.total || 0 },
-    { month: 'MAR', value: stats.kasambahay?.total || 0 },
-    { month: 'APR', value: stats.business_permits?.total || 0 },
-    { month: 'MAY', value: Math.floor((stats.barangay_inhabitants?.total || 0) * 0.8) },
-    { month: 'JUN', value: Math.floor((stats.personal_details?.total || 0) * 0.9) },
-    { month: 'JUL', value: Math.floor((stats.kasambahay?.total || 0) * 1.1) },
-    { month: 'AUG', value: Math.floor((stats.business_permits?.total || 0) * 1.2) },
-    { month: 'SEP', value: Math.floor((stats.barangay_inhabitants?.total || 0) * 0.7) },
-    { month: 'OCT', value: Math.floor((stats.personal_details?.total || 0) * 0.8) },
-    { month: 'NOV', value: Math.floor((stats.kasambahay?.total || 0) * 0.9) },
-    { month: 'DEC', value: Math.floor((stats.business_permits?.total || 0) * 1.0) }
+  const fetchMonthlyStats = async () => {
+    try {
+      const currentYear = new Date().getFullYear();
+      const response = await fetch(`http://localhost:3001/api/monthly-stats?year=${currentYear}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setMonthlyStats(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching monthly stats:', error);
+    }
+  };
+
+  // Prepare data for charts from actual monthly database stats
+  const documentStats = monthlyStats.length > 0 ? monthlyStats.map(stat => ({
+    month: stat.month,
+    value: stat.total
+  })) : [
+    { month: 'JAN', value: 0 },
+    { month: 'FEB', value: 0 },
+    { month: 'MAR', value: 0 },
+    { month: 'APR', value: 0 },
+    { month: 'MAY', value: 0 },
+    { month: 'JUN', value: 0 },
+    { month: 'JUL', value: 0 },
+    { month: 'AUG', value: 0 },
+    { month: 'SEP', value: 0 },
+    { month: 'OCT', value: 0 },
+    { month: 'NOV', value: 0 },
+    { month: 'DEC', value: 0 }
   ];
 
   const totalPopulation = stats.barangay_inhabitants?.total || 0;
@@ -83,6 +105,39 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
     { name: 'PWD Residents', value: Math.round((stats.personal_details?.pwd_count || 0) / Math.max(stats.barangay_inhabitants?.total || 1, 1) * 100) },
     { name: 'Non-PWD', value: Math.round(((stats.barangay_inhabitants?.total || 0) - (stats.personal_details?.pwd_count || 0)) / Math.max(stats.barangay_inhabitants?.total || 1, 1) * 100) }
   ];
+
+  const handleBackupData = async () => {
+    try {
+      toast.info('Preparing backup data...');
+
+      const response = await fetch('/api/backup-data', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `barangay-backup-${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        toast.success('Backup data downloaded successfully');
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.message || 'Failed to create backup');
+      }
+    } catch (error) {
+      console.error('Error creating backup:', error);
+      toast.error(`Error creating backup data: ${error.message}`);
+    }
+  };
 
   const COLORS = ['#0066CC', '#E8E8E8'];
   const PWD_COLORS = ['#4A90E2', '#7FB3E5', '#A8D8EA', '#FFD700', '#F8B195'];
@@ -101,6 +156,7 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
         <nav className="flex gap-8 text-gray-600">
           <span className="font-semibold text-black cursor-pointer hover:text-blue-600" onClick={() => onNavigate('admin-dashboard')}>Dashboard</span>
           <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('barangay-inhabitants-list')}>Records</span>
+          <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('certificate-logs')}>Certificate Logs</span>
           <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('manage-users')}>User Management</span>
         </nav>
 
@@ -119,8 +175,8 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
           <h2 className="text-3xl font-bold text-gray-800">Overview</h2>
 
           <div className="flex gap-4 items-center">
-            <select 
-              value={timePeriod} 
+            <select
+              value={timePeriod}
               onChange={(e) => setTimePeriod(e.target.value)}
               className="border border-gray-300 px-4 py-2 rounded-md bg-white text-sm"
             >
@@ -130,12 +186,11 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
               <option>Last month</option>
             </select>
 
-            <button className="bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-800 font-medium text-sm">
-              + Import Data
-            </button>
-
-            <button className="border border-gray-400 text-gray-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 font-medium text-sm">
-              ⬇ Export Data
+            <button
+              onClick={handleBackupData}
+              className="border border-gray-400 text-gray-700 px-4 py-2 rounded-md flex items-center gap-2 hover:bg-gray-50 font-medium text-sm"
+            >
+              💾 Backup Data
             </button>
           </div>
         </div>
@@ -160,13 +215,13 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
                   </div>
                 </div>
               </div>
-              <div className="w-32 h-32">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="w-32 h-32 min-w-[128px] min-h-[128px]">
+                <ResponsiveContainer width="100%" height="100%" minWidth={128} minHeight={128}>
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Voters', value: voterCount },
-                        { name: 'Non-Voters', value: nonVoterCount }
+                        { name: 'Voters', value: voterCount || 0 },
+                        { name: 'Non-Voters', value: nonVoterCount || 0 }
                       ]}
                       cx="50%"
                       cy="50%"
@@ -177,6 +232,7 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
                       <Cell fill="#0066CC" />
                       <Cell fill="#FFB3D9" />
                     </Pie>
+                    <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -186,8 +242,8 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
           {/* Employment Status Card */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h4 className="text-gray-600 text-sm font-medium mb-4">Employment Status</h4>
-            <div className="flex items-center justify-center h-40 w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full h-40 min-w-48">
+              <ResponsiveContainer width="100%" height="100%" minWidth={192} minHeight={160}>
                 <PieChart>
                   <Pie
                     data={employmentData}
@@ -200,6 +256,7 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
                     <Cell fill="#7C5FD8" />
                     <Cell fill="#E0E0E0" />
                   </Pie>
+                  <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -247,8 +304,8 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
           {/* Statistic of Documents */}
           <div className="col-span-2 bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Statistic of Documents</h3>
-            <div style={{ width: '100%', height: '300px', minWidth: '400px', minHeight: '300px' }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full h-72 min-w-96">
+              <ResponsiveContainer width="100%" height="100%" minWidth={384} minHeight={288}>
                 <BarChart data={documentStats}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" fontSize={12} />

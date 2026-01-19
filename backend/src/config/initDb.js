@@ -183,6 +183,24 @@ const createTables = async () => {
       console.log('Note: Citizenship column check completed');
     }
 
+    // Make certificate_type and purpose nullable for admin users to create resident details without them
+    try {
+      await pool.execute(`
+        ALTER TABLE resident_details
+        MODIFY COLUMN certificate_type ENUM('Indigency', 'Residency', 'Clearance', 'Business Permit') NULL
+      `);
+      console.log('✓ certificate_type column made nullable');
+
+      await pool.execute(`
+        ALTER TABLE resident_details
+        MODIFY COLUMN purpose VARCHAR(100) NULL
+      `);
+      console.log('✓ purpose column made nullable');
+    } catch (error) {
+      // Columns might already be nullable or ALTER TABLE not supported in this MySQL version
+      console.log('Note: Certificate columns nullability check completed');
+    }
+
     await pool.execute(kasambahayTable);
     console.log('✓ Kasambahay registration table ready');
 

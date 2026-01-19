@@ -20,8 +20,8 @@ const personalDetailsSchema = Joi.object({
   contact_no: Joi.string().pattern(/^[0-9+\-\s()]+$/).max(20).required(),
   province: Joi.string().max(100).required(),
   educational_attainment: Joi.string().valid('Elementary', 'High School', 'College', 'Vocational', 'Postgraduate', 'None').required(),
-  certificate_type: Joi.string().valid('Indigency', 'Residency', 'Clearance', 'Business Permit').required(),
-  purpose: Joi.string().max(100).required(),
+  certificate_type: Joi.string().valid('Indigency', 'Residency', 'Clearance', 'Business Permit').allow(null, '').optional(),
+  purpose: Joi.string().max(100).allow(null, '').optional(),
   pwd: Joi.boolean().required(),
   tenant: Joi.boolean().required(),
   house_owner_name: Joi.string().max(255).when('tenant', { is: true, then: Joi.required() }),
@@ -85,17 +85,47 @@ const barangayInhabitantsSchema = Joi.object({
 
 // Business Permit Validation Schema
 const businessPermitSchema = Joi.object({
-  proprietor_name: Joi.string().min(1).max(255).required(),
+  // Application details
+  resident_id: Joi.number().integer().min(1).allow(null),
+  application_type: Joi.string().valid('NEW', 'OLD').default('NEW'),
+  application_date: Joi.date().required(),
+
+  // Business details
   business_name: Joi.string().min(1).max(255).required(),
   nature_of_business: Joi.string().max(255).required(),
+  proprietor_name: Joi.string().min(1).max(255).required(),
   business_address: Joi.string().max(500).required(),
-  amount_paid: Joi.number().min(0).precision(2).required(),
-  date_paid: Joi.date().required(),
-  or_number: Joi.string().max(50).required(),
-  received_by: Joi.string().max(255).required(),
+
+  // Registration details
+  brn_number: Joi.string().max(100).required(),
+  dti_number: Joi.string().max(100).required(),
+  mayors_permit_number: Joi.string().max(100).required(),
+
+  // Issuance details
+  date_issued: Joi.date().required(),
+  email_address: Joi.string().email().max(100).required(),
+  contact_number: Joi.string().pattern(/^[0-9+\-\s()]+$/).max(20).required(),
+
+  // Representation
+  representative_name: Joi.string().max(255).required(),
+  position: Joi.string().max(100).required(),
+
+  // Consent
+  privacy_consent: Joi.boolean().default(false),
+
+  // Control number
+  control_number: Joi.string().max(20).allow(''),
+
+  // Payment details
+  amount_paid: Joi.number().min(0).precision(2).default(500.00),
+  date_paid: Joi.date().allow(null),
+  or_number: Joi.string().max(50).allow(''),
+
+  // Certificate details
+  received_by: Joi.string().max(255).allow(''),
   applicant_signature: Joi.string().max(255).allow(''),
-  date_received: Joi.date().required(),
-  valid_until: Joi.date().required()
+  date_received: Joi.date().allow(null),
+  valid_until: Joi.date().allow(null)
 });
 
 // Auth Validation Schemas

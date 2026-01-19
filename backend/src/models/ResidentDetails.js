@@ -5,6 +5,32 @@ class ResidentDetails extends BaseModel {
     super('resident_details');
   }
 
+  async checkDuplicate(firstName, lastName, age, dateOfBirth) {
+    const sql = `
+      SELECT id FROM resident_details
+      WHERE first_name = ? AND last_name = ? AND age = ? AND date_of_birth = ?
+    `;
+    const [rows] = await this.pool.execute(sql, [firstName, lastName, age, dateOfBirth]);
+    return rows.length > 0;
+  }
+
+  async create(data) {
+    // Check for duplicate before creating
+    const isDuplicate = await this.checkDuplicate(
+      data.first_name,
+      data.last_name,
+      data.age,
+      data.date_of_birth
+    );
+
+    if (isDuplicate) {
+      throw new Error('A resident with the same name, age, and birthdate already exists');
+    }
+
+    // Proceed with creation if no duplicate
+    return super.create(data);
+  }
+
   async getRecentRecords(limit = 50) {
     const sql = `
       SELECT

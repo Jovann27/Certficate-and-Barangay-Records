@@ -31,13 +31,61 @@ export default function CertificateOfIndigency({ formData = {}, onBack, onLogout
 
   const handlePrint = async () => {
     try {
+      // Transform form data to match API schema
+      const transformedData = {
+        ...formData,
+        // Transform boolean fields
+        pwd: formData.pwd === 'yes',
+        tenant: formData.is_tenant === 'yes',
+        living_with_relative: formData.living_with_relative === 'yes',
+        registered_voter: formData.registered_voter === 'yes',
+        house_owner: formData.house_owner === 'yes',
+        kasambahay: formData.is_kasambahay === 'yes',
+        // Transform gender to match schema
+        gender: formData.gender ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) : 'Male',
+        // Transform civil status
+        civil_status: formData.civil_status ? formData.civil_status.charAt(0).toUpperCase() + formData.civil_status.slice(1) : 'Single',
+        // Transform certificate type (always 'Indigency' for this component)
+        certificate_type: 'Indigency',
+        // Transform residency length to match schema
+        residency_length: formData.years_residing === 'less_than_1' ? 'Less than 1 year' :
+                         formData.years_residing === '1-5' ? '1-5 years' :
+                         formData.years_residing === '6-10' ? '6-10 years' :
+                         formData.years_residing === '11-20' ? 'More than 10 years' :
+                         formData.years_residing === 'more_than_20' ? 'More than 10 years' :
+                         formData.years_residing === 'since_birth' ? 'More than 10 years' :
+                         formData.years_residing,
+        // Transform employment status to match schema
+        employment_status: formData.employment_status === 'employed' ? 'Employed' :
+                          formData.employment_status === 'unemployed' ? 'Unemployed' :
+                          formData.employment_status === 'self-employed' ? 'Self-Employed' :
+                          formData.employment_status === 'student' ? 'Student' :
+                          formData.employment_status === 'retired' ? 'Retired' :
+                          'Employed',
+        // Transform educational attainment to match schema
+        educational_attainment: formData.educational_attainment === 'elementary' ? 'Elementary' :
+                               formData.educational_attainment === 'high_school' ? 'High School' :
+                               formData.educational_attainment === 'college' ? 'College' :
+                               formData.educational_attainment === 'vocational' ? 'Vocational' :
+                               formData.educational_attainment === 'post_graduate' ? 'Postgraduate' :
+                               'High School',
+        // Add missing required fields
+        citizenship: formData.citizenship || 'Filipino',
+        // Calculate age from date of birth if available
+        age: formData.date_of_birth ? Math.floor((new Date() - new Date(formData.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) : 25,
+        religion: formData.religion || 'Catholic',
+        contact_no: formData.contact_no || '+63-999-999-9999',
+        province: formData.province || 'Quezon City',
+        purpose: formData.purpose || 'Certificate of Indigency',
+      };
+
       // Save resident data to database first
       const response = await fetch('/api/personal-details', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(transformedData),
       });
 
       const result = await response.json();
@@ -78,7 +126,6 @@ export default function CertificateOfIndigency({ formData = {}, onBack, onLogout
               <div className="flex items-center gap-3">
                 <div className=" text-white p-2 rounded-lg">
                   <span className="text-xl font-bold">
-                    <img src={kalusugan} alt="" />
                   </span>
                 </div>
                 <div>
@@ -114,7 +161,9 @@ export default function CertificateOfIndigency({ formData = {}, onBack, onLogout
                 <div className="w-20 h-20 rounded-full border-4 border-purple-400 flex items-center justify-center bg-white relative">
                   <div className="absolute inset-0 rounded-full border-4 border-pink-300" style={{ margin: '4px' }}></div>
                   <div className="text-center z-10">
-                    <div className="text-pink-500 text-2xl"></div>
+                    <div className="text-pink-500 text-2xl">
+                      <img src={kalusugan} alt="" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -341,7 +390,7 @@ export default function CertificateOfIndigency({ formData = {}, onBack, onLogout
       </div>
 
       {/* PRINT STYLES */}
-      <style jsx>{`
+      <style>{`
         @media print {
           @page {
             size: A4;

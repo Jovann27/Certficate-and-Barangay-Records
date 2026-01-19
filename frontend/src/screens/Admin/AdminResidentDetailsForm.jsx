@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
-import CertificateOfIndigency from '../certificates/CertificateOfIndigency';
-import Residency from '../certificates/Residency';
-import Residency2 from '../certificates/Residency2';
-import CertificateOfEmployment from '../certificates/CertificateOfEmployment';
 
 const AdminResidentDetailsForm = ({ onBack, onLogout }) => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [selectedCertificate, setSelectedCertificate] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -22,72 +17,121 @@ const AdminResidentDetailsForm = ({ onBack, onLogout }) => {
     e.preventDefault();
     setLoading(true);
 
-    const certificateType = formData.certificate_type;
+    try {
+      // Transform form data to match API schema
+      const transformedData = {
+        ...formData,
+        // Transform boolean fields
+        pwd: formData.pwd === 'yes',
+        tenant: formData.is_tenant === 'yes',
+        living_with_relative: formData.living_with_relative === 'yes',
+        registered_voter: formData.registered_voter === 'yes',
+        house_owner: formData.house_owner === 'yes',
+        kasambahay: formData.is_kasambahay === 'yes',
+        // Transform gender to match schema
+        gender: formData.gender ? formData.gender.charAt(0).toUpperCase() + formData.gender.slice(1) : 'Male',
+        // Transform civil status
+        civil_status: formData.civil_status ? formData.civil_status.charAt(0).toUpperCase() + formData.civil_status.slice(1) : 'Single',
+        // Transform residency length to match schema
+        residency_length: formData.years_residing === 'less_than_1' ? 'Less than 1 year' :
+                         formData.years_residing === '1-5' ? '1-5 years' :
+                         formData.years_residing === '6-10' ? '6-10 years' :
+                         formData.years_residing === '11-20' ? 'More than 10 years' :
+                         formData.years_residing === 'more_than_20' ? 'More than 10 years' :
+                         formData.years_residing === 'since_birth' ? 'More than 10 years' :
+                         formData.years_residing,
+        // Transform employment status to match schema
+        employment_status: formData.employment_status === 'employed' ? 'Employed' :
+                          formData.employment_status === 'unemployed' ? 'Unemployed' :
+                          formData.employment_status === 'self-employed' ? 'Self-Employed' :
+                          formData.employment_status === 'student' ? 'Student' :
+                          formData.employment_status === 'retired' ? 'Retired' :
+                          'Employed',
+        // Transform educational attainment to match schema
+        educational_attainment: formData.educational_attainment === 'elementary' ? 'Elementary' :
+                               formData.educational_attainment === 'high_school' ? 'High School' :
+                               formData.educational_attainment === 'college' ? 'College' :
+                               formData.educational_attainment === 'vocational' ? 'Vocational' :
+                               formData.educational_attainment === 'post_graduate' ? 'Postgraduate' :
+                               'High School',
+        // Add missing required fields
+        citizenship: formData.citizenship || 'Filipino',
+        // Calculate age from date of birth if available
+        age: formData.date_of_birth ? Math.floor((new Date() - new Date(formData.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000)) : 25,
+        religion: formData.religion || 'Catholic',
+        contact_no: formData.contact_no || '+63-999-999-9999',
+        province: formData.province || 'Quezon City',
+      };
 
-    // Navigate to the appropriate certificate based on selection
-    if (certificateType === 'indigency') {
-      setSelectedCertificate('indigency');
+      // Create residentData object with only the fields that are in the schema
+      const residentData = {
+        resident_id: transformedData.resident_id,
+        first_name: transformedData.first_name,
+        last_name: transformedData.last_name,
+        middle_name: transformedData.middle_name,
+        suffix: transformedData.suffix,
+        age: transformedData.age,
+        gender: transformedData.gender,
+        religion: transformedData.religion,
+        civil_status: transformedData.civil_status,
+        address: transformedData.address,
+        occupation: transformedData.occupation,
+        date_of_birth: transformedData.date_of_birth,
+        place_of_birth: transformedData.place_of_birth,
+        citizenship: transformedData.citizenship,
+        employment_status: transformedData.employment_status,
+        contact_no: transformedData.contact_no,
+        province: transformedData.province,
+        educational_attainment: transformedData.educational_attainment,
+        certificate_type: transformedData.certificate_type,
+        purpose: transformedData.purpose,
+        pwd: transformedData.pwd,
+        tenant: transformedData.tenant,
+        house_owner_name: transformedData.house_owner_name,
+        living_with_relative: transformedData.living_with_relative,
+        relative_name: transformedData.relative_name,
+        relative_relationship: transformedData.relative_relationship,
+        residency_length: transformedData.residency_length,
+        registered_voter: transformedData.registered_voter,
+        house_owner: transformedData.house_owner,
+        kasambahay: transformedData.kasambahay
+      };
+
+
+
+      // Save resident data to database
+      const response = await fetch('http://localhost:3001/api/personal-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(residentData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setMessage('Resident data saved successfully');
+        setTimeout(() => {
+          onBack(); // Go back to dashboard after successful save
+        }, 2000);
+      } else {
+        console.error('Validation errors:', result.errors);
+        result.errors.forEach((error, index) => {
+          console.error(`Error ${index + 1}:`, error.field, error.message);
+        });
+        setMessage(result.message || 'Failed to save resident data');
+      }
+    } catch (error) {
+      console.error('Error saving resident data:', error);
+      setMessage('Failed to save resident data. Please try again.');
+    } finally {
       setLoading(false);
-      return;
-    } else if (certificateType === 'residency') {
-      setSelectedCertificate('residency');
-      setLoading(false);
-      return;
-    } else if (certificateType === 'residency2') {
-      setSelectedCertificate('residency2');
-      setLoading(false);
-      return;
-    } else if (certificateType === 'employment') {
-      setSelectedCertificate('employment');
-      setLoading(false);
-      return;
     }
-
-    // If no certificate type selected, show error
-    setMessage('Please select a certificate type');
-    setLoading(false);
   };
 
-  // Render the selected certificate with the form data
-  if (selectedCertificate === 'indigency') {
-    return (
-      <CertificateOfIndigency
-        formData={formData}
-        onBack={() => setSelectedCertificate(null)}
-        onLogout={onLogout}
-      />
-    );
-  }
 
-  if (selectedCertificate === 'residency') {
-    return (
-      <Residency
-        formData={formData}
-        onBack={() => setSelectedCertificate(null)}
-        onLogout={onLogout}
-      />
-    );
-  }
-
-  if (selectedCertificate === 'residency2') {
-    return (
-      <Residency2
-        formData={formData}
-        onBack={() => setSelectedCertificate(null)}
-        onLogout={onLogout}
-      />
-    );
-  }
-
-  if (selectedCertificate === 'employment') {
-    return (
-      <CertificateOfEmployment
-        formData={formData}
-        onBack={() => setSelectedCertificate(null)}
-        onLogout={onLogout}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -261,32 +305,7 @@ const AdminResidentDetailsForm = ({ onBack, onLogout }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-          <div>
-            <label className="block text-sm mb-2">
-              Certificate Type <span className="text-red-500">*</span>
-            </label>
-            <select name="certificate_type" onChange={handleChange} value={formData.certificate_type || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
-              <option value="">Select Type</option>
-              <option value="indigency">Certificate of Indigency</option>
-              <option value="residency">Certificate of Residency</option>
-              <option value="residency2">Certificate of Residency II</option>
-              <option value="employment">Certificate of Employment</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm mb-2">
-              Purpose <span className="text-red-500">*</span>
-            </label>
-            <select name="purpose" onChange={handleChange} value={formData.purpose || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
-              <option value="">Select Purpose</option>
-              <option value="employment">Employment</option>
-              <option value="school">School Requirements</option>
-              <option value="loan">Loan Application</option>
-              <option value="legal">Legal Purposes</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
           <div>
             <label className="block text-sm mb-2">
               Are you belong to PWD? <span className="text-red-500">*</span>
@@ -597,7 +616,7 @@ const AdminResidentDetailsForm = ({ onBack, onLogout }) => {
           <div className="flex justify-end gap-4">
             <button type="button" onClick={onBack} className="px-6 py-3 bg-gray-200 rounded-md">Cancel</button>
             <button type="submit" disabled={loading} className="px-6 py-3 bg-blue-600 text-white rounded-md disabled:opacity-50">
-              {loading ? 'Submitting...' : 'Generate'}
+              {loading ? 'Submitting...' : 'Save Resident Details'}
             </button>
           </div>
         </form>

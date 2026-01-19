@@ -1,5 +1,6 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
+const ExcelJS = require('exceljs');
 const ResidentDetails = require('../models/ResidentDetails');
 const Kasambahay = require('../models/Kasambahay');
 const BarangayInhabitants = require('../models/BarangayInhabitants');
@@ -21,6 +22,15 @@ router.post('/personal-details', optionalAuth, validatePersonalDetails, async (r
     });
   } catch (error) {
     console.error('Personal details submission error:', error);
+
+    // Check if it's a duplicate error
+    if (error.message && error.message.includes('same name, age, and birthdate already exists')) {
+      return res.status(409).json({
+        success: false,
+        message: 'A resident with the same name, age, and birthdate already exists'
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Database error occurred'
@@ -67,6 +77,23 @@ router.post('/barangay-inhabitants', optionalAuth, validateBarangayInhabitants, 
 // Business Permit Form
 router.post('/business-permit', optionalAuth, validateBusinessPermit, async (req, res) => {
   try {
+    const { resident_id } = req.body;
+
+    // Check if resident has applied for business permit within last 6 months
+    if (resident_id) {
+      const recentApplication = await BusinessPermit.checkRecentApplication(resident_id, 6);
+      if (recentApplication) {
+        const expirationDate = new Date(recentApplication.expiration_date);
+        const now = new Date();
+        const daysUntilExpiration = Math.ceil((expirationDate - now) / (1000 * 60 * 60 * 24));
+
+        return res.status(400).json({
+          success: false,
+          message: `A business permit was already issued to this resident on ${new Date(recentApplication.created_at).toLocaleDateString()}. Residents can only apply for one business permit every 6 months. Please wait ${daysUntilExpiration} more days before submitting a new application.`
+        });
+      }
+    }
+
     const result = await BusinessPermit.create(req.body);
     res.status(201).json({
       success: true,
@@ -614,6 +641,153 @@ router.get('/stats', optionalAuth, async (req, res) => {
   }
 });
 
+// Get monthly document statistics
+router.get('/monthly-stats', optionalAuth, async (req, res) => {
+  try {
+    const { year = new Date().getFullYear() } = req.query;
+
+    // Get monthly counts for each document type
+    const [personalMonthly] = await ResidentDetails.pool.execute(`
+      SELECT
+        MONTH(created_at) as month,
+        COUNT(*) as count
+      FROM resident_details
+      WHERE YEAR(created_at) = ?
+      GROUP BY MONTH(created_at)
+      ORDER BY MONTH(created_at)
+    `, [year]);
+
+    const [kasambahayMonthly] = await Kasambahay.pool.execute(`
+      SELECT
+        MONTH(created_at) as month,
+        COUNT(*) as count
+      FROM kasambahay_registration
+      WHERE YEAR(created_at) = ?
+      GROUP BY MONTH(created_at)
+      ORDER BY MONTH(created_at)
+    `, [year]);
+
+    const [inhabitantsMonthly] = await BarangayInhabitants.pool.execute(`
+      SELECT
+        MONTH(created_at) as month,
+        COUNT(*) as count
+      FROM barangay_inhabitants
+      WHERE YEAR(created_at) = ?
+      GROUP BY MONTH(created_at)
+      ORDER BY MONTH(created_at)
+    `, [year]);
+
+    const [businessMonthly] = await BusinessPermit.pool.execute(`
+      SELECT
+        MONTH(created_at) as month,
+        COUNT(*) as count
+      FROM business_permits
+      WHERE YEAR(created_at) = ?
+      GROUP BY MONTH(created_at)
+      ORDER BY MONTH(created_at)
+    `, [year]);
+
+    // Create monthly data array for 12 months
+    const monthlyData = [];
+    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+    for (let i = 1; i <= 12; i++) {
+      const personalCount = personalMonthly.find(item => item.month === i)?.count || 0;
+      const kasambahayCount = kasambahayMonthly.find(item => item.month === i)?.count || 0;
+      const inhabitantsCount = inhabitantsMonthly.find(item => item.month === i)?.count || 0;
+      const businessCount = businessMonthly.find(item => item.month === i)?.count || 0;
+
+      monthlyData.push({
+        month: monthNames[i - 1],
+        personal_details: personalCount,
+        kasambahay: kasambahayCount,
+        barangay_inhabitants: inhabitantsCount,
+        business_permits: businessCount,
+        total: personalCount + kasambahayCount + inhabitantsCount + businessCount
+      });
+    }
+
+    res.json({
+      success: true,
+      data: monthlyData,
+      year: year
+    });
+  } catch (error) {
+    console.error('Monthly stats fetch error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database error occurred'
+    });
+  }
+});
+
+// Get certificate logs (authenticated users only)
+router.get('/certificate-logs', authenticateToken, async (req, res) => {
+  try {
+    const { search, limit = 100 } = req.query;
+
+    let personalDetailsRecords = [];
+    let kasambahayRecords = [];
+    let businessPermitRecords = [];
+
+    if (search) {
+      // Search functionality for certificates only
+      personalDetailsRecords = await ResidentDetails.searchByName(search, Math.ceil(limit / 3));
+      kasambahayRecords = await Kasambahay.searchByEmployer(search, Math.ceil(limit / 3));
+      businessPermitRecords = await BusinessPermit.searchByName(search, Math.ceil(limit / 3));
+    } else {
+      // Recent certificate records
+      personalDetailsRecords = await ResidentDetails.getRecentRecords(Math.ceil(limit / 3));
+      kasambahayRecords = await Kasambahay.getRecentRecords(Math.ceil(limit / 3));
+      businessPermitRecords = await BusinessPermit.getRecentRecords(Math.ceil(limit / 3));
+    }
+
+    // Format and combine certificate results only
+    const certificateLogs = [
+      ...personalDetailsRecords.map(record => ({
+        id: `personal-${record.id}`,
+        name: record.full_name || record.name,
+        address: record.address,
+        type: record.certificate_type || 'Personal Certificate',
+        category: record.certificate_type || record.category,
+        date_issued: record.date_issued
+      })),
+      ...kasambahayRecords.map(record => ({
+        id: `kasambahay-${record.id}`,
+        name: record.name,
+        address: record.address,
+        type: 'Certificate of Employment',
+        category: 'Kasambahay Registration',
+        date_issued: record.date_issued
+      })),
+      ...businessPermitRecords.map(record => ({
+        id: `business-${record.id}`,
+        name: record.proprietor_name,
+        address: record.business_address,
+        type: 'Business Permit Certificate',
+        category: 'Business Permit',
+        date_issued: record.date_issued
+      }))
+    ];
+
+    // Sort by date and limit
+    const sortedLogs = certificateLogs
+      .sort((a, b) => new Date(b.date_issued) - new Date(a.date_issued))
+      .slice(0, parseInt(limit));
+
+    res.json({
+      success: true,
+      data: sortedLogs
+    });
+  } catch (error) {
+    console.error('Certificate logs fetch error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database error occurred'
+    });
+  }
+});
+
 // Get individual record details (authenticated users only)
 router.get('/records/:type/:id', authenticateToken, async (req, res) => {
   try {
@@ -827,6 +1001,99 @@ router.post('/officials', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Database error occurred'
+    });
+  }
+});
+
+// Backup all data to Excel file (admin only)
+router.get('/backup-data', authenticateToken, async (req, res) => {
+  try {
+    // Import database connection
+    const { getPool } = require('../config/database');
+    const pool = getPool();
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Barangay Kalusugan System';
+    workbook.lastModifiedBy = 'Admin';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    // Get all data from different tables using direct pool queries
+    const [personalDetails] = await pool.execute('SELECT * FROM resident_details ORDER BY created_at DESC');
+    const [kasambahayRecords] = await pool.execute('SELECT * FROM kasambahay_registration ORDER BY created_at DESC');
+    const [inhabitants] = await pool.execute('SELECT * FROM barangay_inhabitants ORDER BY created_at DESC');
+    const [businessPermits] = await pool.execute('SELECT * FROM business_permits ORDER BY created_at DESC');
+    const [officials] = await pool.execute('SELECT * FROM officials ORDER BY position_order');
+    const [users] = await pool.execute('SELECT id, username, email, role, is_active, created_at, updated_at FROM users ORDER BY created_at DESC');
+
+    // Helper function to add data to worksheet
+    const addWorksheetData = (workbook, sheetName, data) => {
+      if (!data || data.length === 0) return;
+
+      const sheet = workbook.addWorksheet(sheetName);
+      const headers = Object.keys(data[0]);
+      sheet.addRow(headers);
+
+      data.forEach(record => {
+        const values = headers.map(header => {
+          const value = record[header];
+          // Convert dates to readable format
+          if (value instanceof Date) {
+            return value.toISOString().split('T')[0];
+          }
+          // Handle boolean values
+          if (typeof value === 'boolean') {
+            return value ? 'Yes' : 'No';
+          }
+          return value;
+        });
+        sheet.addRow(values);
+      });
+
+      // Style the header row
+      const headerRow = sheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4A90E2' }
+      };
+      headerRow.alignment = { horizontal: 'center' };
+
+      // Auto-fit columns
+      headers.forEach((header, index) => {
+        const column = sheet.getColumn(index + 1);
+        let maxLength = header.length;
+        data.forEach(record => {
+          const value = record[header]?.toString() || '';
+          if (value.length > maxLength) maxLength = value.length;
+        });
+        column.width = Math.min(maxLength + 2, 50); // Max width of 50
+      });
+    };
+
+    // Add all worksheets
+    addWorksheetData(workbook, 'Personal Details', personalDetails);
+    addWorksheetData(workbook, 'Kasambahay Registration', kasambahayRecords);
+    addWorksheetData(workbook, 'Barangay Inhabitants', inhabitants);
+    addWorksheetData(workbook, 'Business Permits', businessPermits);
+    addWorksheetData(workbook, 'Officials', officials);
+    addWorksheetData(workbook, 'Users', users);
+
+    // Set response headers
+    const fileName = `barangay-backup-${new Date().toISOString().split('T')[0]}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    // Write to buffer and send
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('Backup data error:', error);
+    res.status(500).json({
+      success: false,
+      message: `Failed to create backup data: ${error.message}`
     });
   }
 });

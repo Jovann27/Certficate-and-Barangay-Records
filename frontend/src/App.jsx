@@ -3,6 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import LoginSystem from './screens/LoginSystem';
 import AdminDashboard from './screens/Admin/AdminDashboard';
+import CertificateLogs from './screens/Admin/CertificateLogs';
 import Dashboard from './screens/Staff/Dashboard';
 import ResidentDetailsForm from './screens/Staff/ResidentDetailsForm';
 import AdminResidentDetailsForm from './screens/Admin/AdminResidentDetailsForm';
@@ -11,7 +12,7 @@ import RecordOfBarangayInhabitantsForm from './screens/Staff/RecordOfBarangayInh
 import AdminRecordOfBarangayInhabitantsForm from './screens/Admin/AdminRecordOfBarangayInhabitantsForm';
 import BarangayInhabitantsList from './screens/Admin/BarangayInhabitantsList';
 import ManageUsers from './screens/Admin/ManageUsers';
-import Documents from './screens/Admin/Documents';
+
 import Residency from './screens/certificates/Residency';
 import BusinessPermitCertificate from './screens/certificates/BusinessPermitCertificate';
 import CertificateOfIndigency from './screens/certificates/CertificateOfIndigency';
@@ -72,7 +73,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'personal':
-        return <ResidentDetailsForm onBack={() => setCurrentView('dashboard')} onLogout={handleLogout} />;
+        return <ResidentDetailsForm onBack={() => setCurrentView('dashboard')} onLogout={handleLogout} user={user} />;
       case 'admin-resident-details':
         return <AdminResidentDetailsForm onBack={() => setCurrentView('admin-dashboard')} onLogout={handleLogout} />;
       case 'business':
@@ -88,16 +89,16 @@ function App() {
         return <AdminDashboard onLogout={handleLogout} onNavigate={handleNavigate} />;
       case 'manage-users':
         return <ManageUsers onNavigate={handleNavigate} onLogout={handleLogout} />;
-      case 'documents':
-        return <Documents onNavigate={handleNavigate} onLogout={handleLogout} residentId={viewData?.residentId} />;
+      case 'certificate-logs':
+        return <CertificateLogs onNavigate={handleNavigate} onLogout={handleLogout} />;
       case 'certificate-residency':
-        return <Residency onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
+        return <Residency onBack={() => setCurrentView('barangay-inhabitants-list')} onLogout={handleLogout} formData={viewData} />;
       case 'certificate-business-permit':
-        return <BusinessPermitCertificate onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
+        return <BusinessPermitCertificate onBack={() => setCurrentView('barangay-inhabitants-list')} onLogout={handleLogout} formData={viewData} />;
       case 'certificate-of-indigency':
-        return <CertificateOfIndigency onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
+        return <CertificateOfIndigency onBack={() => setCurrentView('barangay-inhabitants-list')} onLogout={handleLogout} formData={viewData} />;
       case 'certificate-of-employment':
-        return <CertificateOfEmployment onBack={() => setCurrentView('documents')} onLogout={handleLogout} formData={viewData} />;
+        return <CertificateOfEmployment onBack={() => setCurrentView('barangay-inhabitants-list')} onLogout={handleLogout} formData={viewData} />;
       default:
         if (user?.role === 'admin') {
           return <AdminDashboard onLogout={handleLogout} onNavigate={handleNavigate} />;

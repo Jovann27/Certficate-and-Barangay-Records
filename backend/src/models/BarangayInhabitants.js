@@ -8,9 +8,8 @@ class BarangayInhabitants extends BaseModel {
   async getRecentRecords(limit = 50) {
     const sql = `
       SELECT
-        id,
+        *,
         CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, COALESCE(CONCAT(' ', qualifier), '')) as name,
-        address,
         'Barangay Inhabitants Record' as type,
         relationship_to_head as category,
         created_at as date_issued
@@ -25,9 +24,8 @@ class BarangayInhabitants extends BaseModel {
   async searchByName(name, limit = 20) {
     const sql = `
       SELECT
-        id,
+        *,
         CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, COALESCE(CONCAT(' ', qualifier), '')) as name,
-        address,
         'Barangay Inhabitants Record' as type,
         relationship_to_head as category,
         created_at as date_issued

@@ -3,12 +3,12 @@ import { toast } from 'react-toastify';
 import qc from '../../assets/qc.png';
 import logo from '../../assets/kalusugan.png';
 
-const BusinessPermitCertificate = ({ data, onBack, onLogout }) => {
+const BusinessPermitCertificate = ({ data, formData, onSuccess, onBack, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [officials, setOfficials] = useState({});
 
-  // Default data if none provided
-  const defaultData = {
+  // Use formData if available (auto-populated from resident), otherwise fall back to data or defaults
+  const certificateData = formData || data || {
     proprietor_name: '',
     business_name: '',
     nature_of_business: '',
@@ -22,8 +22,6 @@ const BusinessPermitCertificate = ({ data, onBack, onLogout }) => {
     valid_until: '',
     control_number: ''
   };
-
-  const certificateData = data || defaultData;
 
   // Fetch officials data
   useEffect(() => {
@@ -87,7 +85,7 @@ const BusinessPermitCertificate = ({ data, onBack, onLogout }) => {
         control_number: certificateData.control_number
       };
 
-      const response = await fetch('http://localhost:3001/api/business-permit/generate-pdf', {
+      const response = await fetch('/api/business-permit/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pdfData),
@@ -114,8 +112,75 @@ const BusinessPermitCertificate = ({ data, onBack, onLogout }) => {
     setLoading(false);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (!certificateData || !certificateData.proprietor_name || !certificateData.business_name) {
+      toast.error('Certificate data is incomplete. Please fill out the form completely.');
+      return;
+    }
+
+    try {
+      // Prepare complete business permit data for database storage
+      const businessPermitData = {
+        // Application details
+        application_type: formData?.applicationType || 'NEW',
+        application_date: formData?.date || new Date().toISOString().split('T')[0],
+
+        // Business details
+        business_name: formData?.businessName || '',
+        nature_of_business: formData?.natureOfBusiness || '',
+        proprietor_name: formData?.proprietorName || '',
+        business_address: formData?.businessAddress || '',
+
+        // Registration details
+        brn_number: formData?.brnNumber || '',
+        dti_number: formData?.dtiNumber || '',
+        mayors_permit_number: formData?.mayorsPermitNumber || '',
+
+        // Issuance details
+        date_issued: formData?.dateIssued || new Date().toISOString().split('T')[0],
+        email_address: formData?.emailAddress || '',
+        contact_number: formData?.contactNumber || '',
+
+        // Representation
+        representative_name: formData?.representativeName || '',
+        position: formData?.position || '',
+
+        // Payment details
+        amount_paid: parseFloat(formData?.amountPaid) || 0,
+        date_paid: formData?.datePaid || new Date().toISOString().split('T')[0],
+        or_number: formData?.orNumber || '',
+
+        // Certificate details
+        received_by: formData?.representativeName || '',
+        date_received: formData?.dateIssued || new Date().toISOString().split('T')[0],
+        valid_until: certificateData.valid_until || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+
+        // Additional fields
+        control_number: certificateData.control_number || '',
+        applicant_signature: certificateData.applicant_signature || '',
+        privacy_consent: formData?.privacyConsent || true
+      };
+
+      // Save business permit data to database
+      const response = await fetch('/api/business-permit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(businessPermitData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success('Business permit saved successfully');
+        // Then print the certificate
+        window.print();
+      } else {
+        toast.error(result.message || 'Failed to save business permit');
+      }
+    } catch (error) {
+      console.error('Error saving business permit:', error);
+      toast.error('Error saving business permit. Please try again.');
+    }
   };
 
   return (

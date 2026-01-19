@@ -52,12 +52,20 @@ const AdminRecordOfBarangayInhabitantsForm = ({ onBack, onLogout }) => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Combine household data with first member data
+      const inhabitantData = {
+        ...formData,
+        ...formData.household_members[0],
+      };
+      delete inhabitantData.household_members; // Remove the array
+
       const response = await fetch('http://localhost:3001/api/barangay-inhabitants', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(inhabitantData),
       });
       const result = await response.json();
       if (response.ok) {
@@ -110,27 +118,27 @@ const AdminRecordOfBarangayInhabitantsForm = ({ onBack, onLogout }) => {
 
         <div className="mb-4">
           <label className="block text-sm mb-1">Region <span className="text-red-500">*</span></label>
-          <input className="w-full p-3 border border-gray-300 rounded-md" />
+          <input name="region" onChange={handleChange} value={formData.region || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
         </div>
         <div className="mb-4">
           <label className="block text-sm mb-1">Province <span className="text-red-500">*</span></label>
-          <input className="w-full p-3 border border-gray-300 rounded-md" />
+          <input name="province" onChange={handleChange} value={formData.province || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
         </div>
         <div className="mb-4">
           <label className="block text-sm mb-1">City / Municipality <span className="text-red-500">*</span></label>
-          <input className="w-full p-3 border border-gray-300 rounded-md" />
+          <input name="city_municipality" onChange={handleChange} value={formData.city_municipality || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
         </div>
         <div className="mb-4">
           <label className="block text-sm mb-1">Barangay <span className="text-red-500">*</span></label>
-          <input className="w-full p-3 border border-gray-300 rounded-md" />
+          <input name="barangay" onChange={handleChange} value={formData.barangay || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
         </div>
         <div className="mb-4">
           <label className="block text-sm mb-1">Household No. <span className="text-red-500">*</span></label>
-          <input className="w-full p-3 border border-gray-300 rounded-md" />
+          <input name="household_no" onChange={handleChange} value={formData.household_no || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
         </div>
         <div className="mb-8">
           <label className="block text-sm mb-1">Address <span className="text-red-500">*</span></label>
-          <input className="w-full p-3 border border-gray-300 rounded-md" />
+          <input name="address" onChange={handleChange} value={formData.address || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
         </div>
 
         <div className="mt-10">
@@ -140,86 +148,113 @@ const AdminRecordOfBarangayInhabitantsForm = ({ onBack, onLogout }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-4">
             <div>
               <label className="block text-sm mb-1">Last Name <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="last_name" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.last_name || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
             <div>
               <label className="block text-sm mb-1">First Name <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="first_name" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.first_name || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
             <div>
               <label className="block text-sm mb-1">Middle Name <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="middle_name" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.middle_name || ''} className="w-full p-3 border border-gray-300 rounded-md" />
             </div>
             <div>
               <label className="block text-sm mb-1">Qualifier <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="qualifier" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.qualifier || ''} className="w-full p-3 border border-gray-300 rounded-md" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-4">
             <div>
               <label className="block text-sm mb-1">Date of Birth <span className="text-red-500">*</span></label>
-              <input type="date" className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="date_of_birth" type="date" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.date_of_birth || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
             <div>
               <label className="block text-sm mb-1">Place of Birth <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="place_of_birth" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.place_of_birth || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
             <div>
               <label className="block text-sm mb-1">Gender <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <select name="gender" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.gender || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-4">
             <div>
               <label className="block text-sm mb-1">Civil Status <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <select name="civil_status" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.civil_status || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
+                <option value="">Select Status</option>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Separated">Separated</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm mb-1">Citizenship <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="citizenship" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.citizenship || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
             <div>
               <label className="block text-sm mb-1">Occupation <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="occupation" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.occupation || ''} className="w-full p-3 border border-gray-300 rounded-md" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
             <div>
               <label className="block text-sm mb-1">Housing Status <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <select name="housing_status" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.housing_status || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
+                <option value="">Select Status</option>
+                <option value="Owned">Owned</option>
+                <option value="Rented">Rented</option>
+                <option value="Mortgaged">Mortgaged</option>
+                <option value="Living with relatives">Living with relatives</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm mb-1">No. of Years Residing in Brgy <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="years_residing" type="number" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.years_residing || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-4">
             <div>
               <label className="block text-sm mb-1">Registered Voter <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <select name="registered_voter" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.registered_voter || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm mb-1">Health Problem (if any) <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="health_problem" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.health_problem || ''} className="w-full p-3 border border-gray-300 rounded-md" />
             </div>
             <div>
               <label className="block text-sm mb-1">Septic Tank <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <select name="septic_tank" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.septic_tank || ''} className="w-full p-3 border border-gray-300 rounded-md" required>
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Not Applicable">Not Applicable</option>
+              </select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
             <div>
               <label className="block text-sm mb-1">Relationship to Household Head <span className="text-red-500">*</span></label>
-              <input className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="relationship_to_head" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.relationship_to_head || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
             <div>
               <label className="block text-sm mb-1">Date Accomplished <span className="text-red-500">*</span></label>
-              <input type="date" className="w-full p-3 border border-gray-300 rounded-md" />
+              <input name="date_accomplished" type="date" onChange={(e) => handleChange(e, 0)} value={formData.household_members[0]?.date_accomplished || ''} className="w-full p-3 border border-gray-300 rounded-md" required />
             </div>
           </div>
         </div>

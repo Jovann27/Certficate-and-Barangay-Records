@@ -192,6 +192,7 @@ const ManageUsers = ({ onNavigate, onLogout }) => {
         <nav className="flex gap-8 text-gray-600">
           <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('admin-dashboard')}>Dashboard</span>
           <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('barangay-inhabitants-list')}>Records</span>
+          <span className="cursor-pointer hover:text-blue-600" onClick={() => onNavigate('certificate-logs')}>Certificate Logs</span>
           <span className="font-semibold text-black cursor-pointer hover:text-blue-600" onClick={() => onNavigate('manage-users')}>User Management</span>
         </nav>
 

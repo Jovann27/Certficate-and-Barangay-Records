@@ -35,6 +35,14 @@ class Official extends BaseModel {
     const officials = await this.findByConditions({ position });
     return officials[0] || null;
   }
+
+  async findByPositionOrder(positionOrder) {
+    const [rows] = await this.pool.execute(
+      'SELECT * FROM officials WHERE position_order = ?',
+      [positionOrder]
+    );
+    return rows[0] || null;
+  }
 }
 
 module.exports = new Official();
