@@ -97,8 +97,8 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
   const nonVoterCount = totalPopulation - voterCount;
 
   const employmentData = [
-    { name: 'Employed', value: Math.round(((stats.personal_details?.total || 0) - (stats.personal_details?.kasambahay_count || 0)) / Math.max(stats.personal_details?.total || 1, 1) * 100) },
-    { name: 'Unemployed', value: Math.round((stats.personal_details?.kasambahay_count || 0) / Math.max(stats.personal_details?.total || 1, 1) * 100) }
+    { name: 'Employed', value: Math.round(((stats.personal_details?.total || 0) + (stats.kasambahay?.total || 0)) / Math.max((stats.personal_details?.total || 0) + (stats.kasambahay?.total || 0) + (stats.barangay_inhabitants?.total || 0), 1) * 100) },
+    { name: 'Unemployed', value: Math.round((stats.barangay_inhabitants?.total || 0) / Math.max((stats.personal_details?.total || 0) + (stats.kasambahay?.total || 0) + (stats.barangay_inhabitants?.total || 0), 1) * 100) }
   ];
 
   const pwdData = [
@@ -292,9 +292,9 @@ export default function AdminDashboard({ onLogout, onNavigate }) {
           <div className="bg-white p-6 rounded-lg shadow">
             <h4 className="text-gray-600 text-sm font-medium mb-4">Senior Citizen</h4>
             <p className="text-gray-500 text-xs mb-4">Total Count</p>
-            <div className="text-3xl font-bold text-gray-800">0</div>
+            <div className="text-3xl font-bold text-gray-800">{stats.personal_details?.senior_citizen_count || 0}</div>
             <div className="mt-2 text-xs text-gray-600">
-              Data not available in current statistics
+              Based on certificate applicants aged 60+
             </div>
           </div>
         </div>

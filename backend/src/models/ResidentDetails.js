@@ -72,7 +72,8 @@ class ResidentDetails extends BaseModel {
         COUNT(*) as total,
         COUNT(CASE WHEN pwd = 1 THEN 1 END) as pwd_count,
         COUNT(CASE WHEN registered_voter = 1 THEN 1 END) as voter_count,
-        COUNT(CASE WHEN kasambahay = 1 THEN 1 END) as kasambahay_count
+        COUNT(CASE WHEN kasambahay = 1 THEN 1 END) as kasambahay_count,
+        COUNT(CASE WHEN age >= 60 THEN 1 END) as senior_citizen_count
       FROM resident_details
     `;
     const [rows] = await this.pool.execute(sql);
